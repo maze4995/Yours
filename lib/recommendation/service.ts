@@ -1,0 +1,69 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ProfileInput, RecommendationResult, SoftwareCatalogItem } from "@/lib/types";
+import { createProfileFingerprint, decideFitDecision, scoreCatalogCandidates } from "@/lib/recommendation/scoring";
+import { generateRecommendationItems } from "@/lib/recommendation/openai";
+
+export async function runRecommendationFlow(params: {
+  supabase: SupabaseClient;
+  userId: string;
+  profile: ProfileInput;
+}): Promise<RecommendationResult> {
+  const { supabase, userId, profile } = params;
+  const profileFingerprint = createProfileFingerprint(profile);
+
+  const { data: cached } = await supabase
+    .from("recommendations")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("profile_fingerprint", profileFingerprint)
+    .maybeSingle();
+
+  if (cached) {
+    return {
+      recommendationId: cached.id,
+      items: cached.items,
+      fitDecision: cached.fit_decision,
+      fitReason: cached.fit_reason ?? ""
+    } satisfies RecommendationResult;
+  }
+
+  const { data: catalogRows, error: catalogError } = await supabase
+    .from("software_catalog")
+    .select("*")
+    .eq("is_active", true);
+
+  if (catalogError) {
+    throw new Error(`CATALOG_ERROR:${catalogError.message}`);
+  }
+
+  const catalog = (catalogRows ?? []) as unknown as SoftwareCatalogItem[];
+  const scored = scoreCatalogCandidates(profile, catalog);
+  const items = await generateRecommendationItems(profile, scored);
+  const fit = decideFitDecision(items);
+  const candidateIds = scored.slice(0, 8).map((candidate) => candidate.item.id);
+
+  const { data: created, error: createError } = await supabase
+    .from("recommendations")
+    .insert({
+      user_id: userId,
+      profile_fingerprint: profileFingerprint,
+      profile_snapshot: profile,
+      candidate_ids: candidateIds,
+      items,
+      fit_decision: fit.fitDecision,
+      fit_reason: fit.fitReason
+    })
+    .select("id")
+    .single();
+
+  if (createError) {
+    throw new Error(`RECOMMENDATION_INSERT_ERROR:${createError.message}`);
+  }
+
+  return {
+    recommendationId: created.id,
+    items,
+    fitDecision: fit.fitDecision,
+    fitReason: fit.fitReason
+  };
+}
