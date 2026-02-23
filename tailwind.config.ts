@@ -39,6 +39,10 @@ const config: Config = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))"
+        },
+        brand: {
+          DEFAULT: "hsl(var(--brand))",
+          foreground: "hsl(var(--brand-foreground))"
         }
       },
       borderRadius: {
@@ -50,10 +54,20 @@ const config: Config = {
         "fade-in-up": {
           "0%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" }
+        },
+        "appear": {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" }
+        },
+        "appear-zoom": {
+          "0%": { opacity: "0", transform: "scale(0.94)" },
+          "100%": { opacity: "1", transform: "scale(1)" }
         }
       },
       animation: {
-        "fade-in-up": "fade-in-up 400ms ease-out"
+        "fade-in-up": "fade-in-up 400ms ease-out",
+        "appear": "appear 600ms cubic-bezier(0.16,1,0.3,1) forwards",
+        "appear-zoom": "appear-zoom 1000ms cubic-bezier(0.16,1,0.3,1) forwards"
       }
     }
   },
