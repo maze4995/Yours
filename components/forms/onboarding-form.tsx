@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { LoadingOverlay } from "@/components/results/loading-overlay";
 
 type OnboardingFormProps = {
   initialValue?: Partial<ProfileInput>;
@@ -170,6 +171,7 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
   const [customGoal, setCustomGoal] = useState("");
   const [customTool, setCustomTool] = useState("");
   const [pending, startTransition] = useTransition();
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -232,9 +234,11 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
   };
 
   const onComplete = () => {
+    setIsAnalyzing(true);
     startTransition(async () => {
       const result = await completeOnboardingAndRecommendAction(payload);
       if (!result.ok) {
+        setIsAnalyzing(false);
         toast.error(result.message);
         return;
       }
@@ -259,6 +263,7 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
 
   return (
     <div className="mx-auto w-full max-w-2xl">
+      {isAnalyzing && <LoadingOverlay />}
       {/* 진행 바 */}
       <div className="mb-8 space-y-2">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
