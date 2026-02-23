@@ -11,9 +11,11 @@ import {
   Target,
   Zap,
   ChevronRight,
+  Star,
 } from "lucide-react";
 import { requireAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { RegenerateButton } from "@/components/results/regenerate-button";
 import type { ProfileInput, RecommendationItem } from "@/lib/types";
 import type { FitAnalysis } from "@/lib/recommendation/openai";
@@ -34,6 +36,23 @@ function parseFitAnalysis(fitReason: string | null): FitAnalysis | null {
 
 function isAiGenerated(fitReason: string | null): boolean {
   return (fitReason?.length ?? 0) > 80;
+}
+
+// ── 소프트웨어 아바타 색상 (이름 기반 해시) ────────────────────
+const AVATAR_PALETTE = [
+  { bg: "bg-gray-900", text: "text-white" },
+  { bg: "bg-blue-600", text: "text-white" },
+  { bg: "bg-violet-600", text: "text-white" },
+  { bg: "bg-amber-500", text: "text-white" },
+  { bg: "bg-emerald-600", text: "text-white" },
+  { bg: "bg-rose-600", text: "text-white" },
+  { bg: "bg-cyan-600", text: "text-white" },
+  { bg: "bg-indigo-600", text: "text-white" },
+];
+
+function getAvatarColor(name: string) {
+  const code = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return AVATAR_PALETTE[code % AVATAR_PALETTE.length];
 }
 
 const PRICING_LABEL: Record<string, string> = {
@@ -250,47 +269,75 @@ export default async function ResultsPage() {
               ? (PRICING_LABEL[catalog.pricing_model] ?? catalog.pricing_model)
               : null;
 
+            const avatarColor = getAvatarColor(item.name);
+
             return (
               <div key={item.softwareId} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-                {/* 카드 헤더 */}
-                <div className="border-b border-border bg-muted/30 px-6 py-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-bold">{item.name}</h2>
-                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                          {catalog?.category && (
-                            <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
-                              {catalog.category}
-                            </span>
-                          )}
-                          {pricingLabel && (
-                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${pricingLabel.includes("무료") ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"}`}>
-                              {pricingLabel}
-                            </span>
-                          )}
-                          {/* 소프트웨어 설명도 AI 생성 여부 표시 */}
-                          {aiGenerated && (
-                            <span className="flex items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                              <Sparkles className="h-2.5 w-2.5" /> AI
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                {/* ── 카드 헤더 — 스크린샷 스타일 ── */}
+                <div className="flex items-center gap-4 border-b border-border px-5 py-4">
+                  {/* 컬러 아바타 */}
+                  <div className="relative flex-shrink-0">
+                    <div
+                      className={cn(
+                        "flex h-12 w-12 items-center justify-center rounded-xl text-base font-bold",
+                        avatarColor.bg,
+                        avatarColor.text,
+                      )}
+                    >
+                      {item.name.charAt(0)}
                     </div>
-                    {catalog?.website_url && (
-                      <a
-                        href={catalog.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      >
-                        공식 사이트 <ExternalLink className="h-3 w-3" />
-                      </a>
+                    {index === 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 shadow-sm">
+                        <Star className="h-3 w-3 fill-white text-white" />
+                      </span>
                     )}
+                  </div>
+
+                  {/* 이름 + 점수 + 바 + 카테고리 */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-base font-bold">{item.name}</h2>
+                        {pricingLabel && (
+                          <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", pricingLabel.includes("무료") ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700")}>
+                            {pricingLabel}
+                          </span>
+                        )}
+                        {aiGenerated && (
+                          <span className="flex items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                            <Sparkles className="h-2.5 w-2.5" /> AI
+                          </span>
+                        )}
+                      </div>
+                      <span className="flex-shrink-0 text-base font-bold text-primary">
+                        {item.score}점
+                      </span>
+                    </div>
+
+                    {/* 점수 진행 바 */}
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all duration-500"
+                        style={{ width: `${item.score}%` }}
+                      />
+                    </div>
+
+                    {/* 카테고리 + 공식 사이트 링크 */}
+                    <div className="mt-1.5 flex items-center justify-between gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {catalog?.category ?? ""}
+                      </span>
+                      {catalog?.website_url && (
+                        <a
+                          href={catalog.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          공식 사이트 <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
 
