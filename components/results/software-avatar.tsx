@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type LogoStage = "clearbit" | "google" | "initial";
+
 interface SoftwareAvatarProps {
   name: string;
   websiteUrl?: string | null;
@@ -19,34 +21,52 @@ export function SoftwareAvatar({
   bg,
   textColor,
 }: SoftwareAvatarProps) {
-  const [failed, setFailed] = useState(false);
+  const [stage, setStage] = useState<LogoStage>(
+    websiteUrl ? "clearbit" : "initial",
+  );
 
-  let logoUrl: string | null = null;
-  if (websiteUrl && !failed) {
+  let domain: string | null = null;
+  if (websiteUrl) {
     try {
-      const domain = new URL(websiteUrl).hostname;
-      logoUrl = `https://logo.clearbit.com/${domain}`;
+      domain = new URL(websiteUrl).hostname;
     } catch {
-      // invalid URL — fall through to initial avatar
+      // invalid URL
     }
   }
+
+  const imgSrc: string | null =
+    domain && stage !== "initial"
+      ? stage === "clearbit"
+        ? `https://logo.clearbit.com/${domain}`
+        : `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+      : null;
+
+  const handleError = () => {
+    setStage((prev) => (prev === "clearbit" ? "google" : "initial"));
+  };
+
+  const showLogo = imgSrc !== null;
 
   return (
     <div className="relative flex-shrink-0">
       <div
         className={cn(
           "flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden",
-          logoUrl
+          showLogo
             ? "border border-border/60 bg-white shadow-sm"
             : cn(bg, textColor, "text-base font-bold"),
         )}
       >
-        {logoUrl ? (
+        {showLogo ? (
           <img
-            src={logoUrl}
+            key={imgSrc}
+            src={imgSrc}
             alt={`${name} logo`}
-            className="h-9 w-9 object-contain"
-            onError={() => setFailed(true)}
+            className={cn(
+              "object-contain",
+              stage === "google" ? "h-8 w-8" : "h-9 w-9",
+            )}
+            onError={handleError}
           />
         ) : (
           name.charAt(0)
