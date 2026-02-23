@@ -16,7 +16,6 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mockup } from "@/components/ui/mockup";
 import { Glow } from "@/components/ui/glow";
 import { cn } from "@/lib/utils";
@@ -201,104 +200,171 @@ export default async function HomePage() {
   // ── 로그인 + 온보딩 완료 유저 → 개인화 화면 ──
   if (user && profile?.onboarding_completed) {
     const isMaker = profile.role === "MAKER";
+    const name = profile.full_name;
+
+    const userActions = [
+      {
+        icon: Sparkles,
+        title: "AI 추천 결과",
+        desc: "최근 프로파일링 분석과 AI가 선별한 소프트웨어 TOP 3를 확인합니다.",
+        href: "/results" as Route,
+        cta: "결과 보기",
+      },
+      {
+        icon: LayoutDashboard,
+        title: "내 대시보드",
+        desc: "모든 프로파일링 이력, 의뢰서, 프로젝트를 한 곳에서 관리합니다.",
+        href: "/dashboard" as Route,
+        cta: "대시보드로",
+      },
+      {
+        icon: Plus,
+        title: "새 프로파일링",
+        desc: "업무 상황이 바뀌었나요? 새로 분석받아 더 나은 추천을 받아보세요.",
+        href: "/onboarding" as Route,
+        cta: "시작하기",
+      },
+    ];
+
+    const makerActions = [
+      {
+        icon: LayoutDashboard,
+        title: "Maker 대시보드",
+        desc: "열린 의뢰 목록, 내 입찰 현황, 진행 중인 프로젝트를 확인합니다.",
+        href: "/maker/dashboard" as Route,
+        cta: "대시보드로",
+      },
+      {
+        icon: Search,
+        title: "열린 의뢰 탐색",
+        desc: "새로 올라온 맞춤 개발 의뢰를 확인하고 가격·납기를 직접 제안하세요.",
+        href: "/maker/dashboard" as Route,
+        cta: "의뢰 보기",
+      },
+      {
+        icon: User,
+        title: "내 프로필",
+        desc: "포트폴리오·스킬·헤드라인을 최신 상태로 유지해 신뢰도를 높이세요.",
+        href: "/settings" as Route,
+        cta: "프로필 관리",
+      },
+    ];
+
+    const actions = isMaker ? makerActions : userActions;
 
     return (
-      <section className="space-y-8">
-        <div className="glass-panel animate-fade-in-up rounded-2xl p-10">
-          <p className="mb-3 inline-flex rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
-            돌아오셨군요 👋
-          </p>
-          <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-5xl">
-            {profile.full_name ? `${profile.full_name}님,` : ""}
-            <br />
-            {isMaker ? "오늘도 좋은 프로젝트 찾아보세요." : "다음 단계로 바로 이동하세요."}
-          </h1>
-          <p className="mt-5 max-w-xl text-base text-muted-foreground">
-            {isMaker
-              ? "열린 의뢰를 확인하고 입찰해보세요. 새로운 프로젝트가 기다리고 있습니다."
-              : "소프트웨어 추천 결과를 확인하거나, 새 프로파일링으로 더 나은 추천을 받아보세요."}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            {isMaker ? (
-              <>
-                <Link href={"/maker/dashboard" as Route}>
-                  <Button size="lg" className="gap-2">
-                    <LayoutDashboard className="h-4 w-4" />
-                    Maker 대시보드
-                  </Button>
-                </Link>
-                <Link href="/settings">
-                  <Button size="lg" variant="outline">내 정보</Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/results">
-                  <Button size="lg" className="gap-2">
-                    추천 결과 보기 <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href={"/dashboard" as Route}>
-                  <Button size="lg" variant="outline" className="gap-2">
-                    <LayoutDashboard className="h-4 w-4" />
-                    대시보드
-                  </Button>
-                </Link>
-                <Link href="/onboarding">
-                  <Button size="lg" variant="ghost" className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    새 프로파일링
-                  </Button>
-                </Link>
-              </>
-            )}
+      <div className="space-y-0">
+        {/* ── 개인화 Hero ── */}
+        <section className="relative overflow-hidden bg-background px-4 py-16 text-foreground md:py-24">
+          {/* 배경 Glow */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <Glow
+              variant="above"
+              className="animate-appear-zoom opacity-0 [animation-delay:800ms]"
+            />
           </div>
-        </div>
 
-        {!isMaker && (
-          <div className="grid gap-4 md:grid-cols-3">
-            <Link href="/results">
-              <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    AI 추천 결과
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">최근 프로파일링 분석과 추천 소프트웨어를 확인합니다.</p>
-                </CardContent>
-              </Card>
-            </Link>
-            <Link href={"/dashboard" as Route}>
-              <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <LayoutDashboard className="h-4 w-4 text-primary" />
-                    내 대시보드
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">모든 프로파일링 이력, 의뢰서, 프로젝트를 관리합니다.</p>
-                </CardContent>
-              </Card>
-            </Link>
-            <Link href="/request/new">
-              <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Plus className="h-4 w-4 text-primary" />
-                    의뢰서 작성
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">AI가 의뢰서를 대신 작성해드려요. 기술 지식 불필요.</p>
-                </CardContent>
-              </Card>
-            </Link>
+          <div className="relative z-10 mx-auto max-w-[1280px]">
+            <div className="flex flex-col items-center gap-6 text-center lg:gap-10">
+              {/* 역할 배지 */}
+              <div className="animate-appear opacity-0">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/8 px-4 py-1.5 text-xs font-semibold text-primary">
+                  {isMaker ? (
+                    <><Code2 className="h-3.5 w-3.5" /> Maker 대시보드</>
+                  ) : (
+                    <><Sparkles className="h-3.5 w-3.5" /> 돌아오셨군요</>
+                  )}
+                </span>
+              </div>
+
+              {/* 그라디언트 헤드라인 */}
+              <h1
+                className={cn(
+                  "inline-block animate-appear pb-2",
+                  "bg-gradient-to-b from-foreground via-foreground/90 to-muted-foreground",
+                  "bg-clip-text text-transparent",
+                  "text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl",
+                  "leading-[1.1] sm:leading-[1.1]",
+                )}
+              >
+                {name ? `${name}님,` : ""}
+                <br />
+                {isMaker
+                  ? "새 프로젝트를 찾아보세요."
+                  : "소프트웨어 추천을 확인해보세요."}
+              </h1>
+
+              {/* 설명 */}
+              <p
+                className={cn(
+                  "max-w-[520px] animate-appear opacity-0 [animation-delay:150ms]",
+                  "text-base font-medium text-muted-foreground sm:text-lg",
+                )}
+              >
+                {isMaker
+                  ? "열린 의뢰를 확인하고 입찰해보세요. 새로운 프로젝트가 기다리고 있습니다."
+                  : "AI가 분석한 최적의 툴을 확인하고, 필요하면 개발자에게 의뢰해보세요."}
+              </p>
+
+              {/* CTA 버튼 */}
+              <div className="animate-appear opacity-0 [animation-delay:300ms] flex flex-wrap justify-center gap-4">
+                {isMaker ? (
+                  <>
+                    <Link href={"/maker/dashboard" as Route}>
+                      <Button size="lg" className="gap-2 px-8 text-base shadow-lg">
+                        <LayoutDashboard className="h-4 w-4" />
+                        Maker 대시보드
+                      </Button>
+                    </Link>
+                    <Link href="/settings">
+                      <Button size="lg" variant="ghost" className="px-8 text-base text-foreground/70">
+                        내 정보
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/results">
+                      <Button size="lg" className="gap-2 px-8 text-base shadow-lg">
+                        추천 결과 보기 <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Link href="/onboarding">
+                      <Button size="lg" variant="ghost" className="gap-2 px-8 text-base text-foreground/70">
+                        <Plus className="h-4 w-4" /> 새 프로파일링
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
-        )}
-      </section>
+        </section>
+
+        {/* ── 빠른 접근 카드 ── */}
+        <section className="px-4 pb-20 pt-2">
+          <div className="mx-auto max-w-[1280px]">
+            <div className="animate-appear opacity-0 [animation-delay:500ms] grid gap-5 md:grid-cols-3">
+              {actions.map((action) => (
+                <Link key={action.title} href={action.href}>
+                  <div className="group relative flex h-full flex-col rounded-2xl border border-border bg-card p-7 transition-all duration-300 hover:border-primary/40 hover:shadow-lg">
+                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
+                      <action.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="font-bold">{action.title}</h3>
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+                      {action.desc}
+                    </p>
+                    <div className="mt-5 flex items-center gap-1 text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                      {action.cta} <ArrowRight className="h-3 w-3" />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
     );
   }
 
