@@ -11,12 +11,12 @@ import {
   Target,
   Zap,
   ChevronRight,
-  Star,
 } from "lucide-react";
 import { requireAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { RegenerateButton } from "@/components/results/regenerate-button";
+import { SoftwareAvatar } from "@/components/results/software-avatar";
 import type { ProfileInput, RecommendationItem } from "@/lib/types";
 import type { FitAnalysis } from "@/lib/recommendation/openai";
 
@@ -275,23 +275,14 @@ export default async function ResultsPage() {
               <div key={item.softwareId} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                 {/* ── 카드 헤더 — 스크린샷 스타일 ── */}
                 <div className="flex items-center gap-4 border-b border-border px-5 py-4">
-                  {/* 컬러 아바타 */}
-                  <div className="relative flex-shrink-0">
-                    <div
-                      className={cn(
-                        "flex h-12 w-12 items-center justify-center rounded-xl text-base font-bold",
-                        avatarColor.bg,
-                        avatarColor.text,
-                      )}
-                    >
-                      {item.name.charAt(0)}
-                    </div>
-                    {index === 0 && (
-                      <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 shadow-sm">
-                        <Star className="h-3 w-3 fill-white text-white" />
-                      </span>
-                    )}
-                  </div>
+                  {/* 소프트웨어 로고 아바타 */}
+                  <SoftwareAvatar
+                    name={item.name}
+                    websiteUrl={catalog?.website_url}
+                    isTop={index === 0}
+                    bg={avatarColor.bg}
+                    textColor={avatarColor.text}
+                  />
 
                   {/* 이름 + 점수 + 바 + 카테고리 */}
                   <div className="flex-1 min-w-0">
