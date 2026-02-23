@@ -76,6 +76,13 @@ export type ProjectTimelineEvent = {
   createdAt: string;
 };
 
+export type MakerOnboardingInput = {
+  displayName: string;
+  headline?: string;
+  skills: string[];
+  portfolioLinks: string[];
+};
+
 export type ActionResult<T = void> =
   | { ok: true; data: T; message?: string }
   | { ok: false; code: string; message: string };

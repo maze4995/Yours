@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
   ActionResult,
   CreateRequestInput,
+  MakerOnboardingInput,
   ProfileInput,
   ProjectStatus,
   SubmitBidInput,
@@ -14,6 +15,7 @@ import type {
 import {
   authSchema,
   createRequestSchema,
+  makerOnboardingSchema,
   onboardingSchema,
   submitBidSchema,
   updateProjectStatusSchema
@@ -47,7 +49,11 @@ export async function signOutAndRedirectAction(formData: FormData): Promise<void
   redirect("/");
 }
 
-export async function signUpAction(input: { email: string; password: string }): Promise<ActionResult<{ nextPath: string }>> {
+export async function signUpAction(input: {
+  email: string;
+  password: string;
+  role?: "USER" | "MAKER";
+}): Promise<ActionResult<{ nextPath: string }>> {
   const parsed = authSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, code: "VALIDATION_ERROR", message: parsed.error.issues[0]?.message ?? "입력이 잘못되었습니다." };
@@ -63,7 +69,8 @@ export async function signUpAction(input: { email: string; password: string }): 
     return { ok: false, code: "AUTH_SIGNUP_FAILED", message: error.message };
   }
 
-  return { ok: true, data: { nextPath: "/onboarding" }, message: "회원가입이 완료되었습니다." };
+  const nextPath = input.role === "MAKER" ? "/maker/onboarding" : "/onboarding";
+  return { ok: true, data: { nextPath }, message: "회원가입이 완료되었습니다." };
 }
 
 export async function signInAction(input: { email: string; password: string }): Promise<ActionResult<{ nextPath: string }>> {
@@ -88,11 +95,18 @@ export async function signInAction(input: { email: string; password: string }): 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_completed")
+    .select("role, onboarding_completed")
     .eq("id", data.user.id)
     .maybeSingle();
 
-  const nextPath = profile?.onboarding_completed ? "/results" : "/onboarding";
+  let nextPath: string;
+  if (profile?.role === "MAKER") {
+    nextPath = "/maker/dashboard";
+  } else if (profile?.onboarding_completed) {
+    nextPath = "/results";
+  } else {
+    nextPath = "/onboarding";
+  }
   return { ok: true, data: { nextPath }, message: "로그인되었습니다." };
 }
 
@@ -105,6 +119,46 @@ export async function signOutAction(): Promise<ActionResult<{ nextPath: string }
   }
 
   return { ok: true, data: { nextPath: "/" } };
+}
+
+export async function completeMakerOnboardingAction(
+  payload: MakerOnboardingInput
+): Promise<ActionResult<{ nextPath: string }>> {
+  const parsed = makerOnboardingSchema.safeParse(payload);
+  if (!parsed.success) {
+    return { ok: false, code: "VALIDATION_ERROR", message: parsed.error.issues[0]?.message ?? "입력이 잘못되었습니다." };
+  }
+
+  const { supabase, user } = await getCurrentContext();
+  if (!supabase || !user) {
+    return { ok: false, code: "UNAUTHORIZED", message: "로그인이 필요합니다." };
+  }
+
+  // 프로필 role을 MAKER로 업데이트
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ role: "MAKER" })
+    .eq("id", user.id);
+
+  if (profileError) {
+    return { ok: false, code: "PROFILE_UPDATE_ERROR", message: profileError.message };
+  }
+
+  // maker_profiles 생성 (이미 있으면 업데이트)
+  const { error: makerError } = await supabase.from("maker_profiles").upsert({
+    user_id: user.id,
+    display_name: parsed.data.displayName,
+    headline: parsed.data.headline || null,
+    skills: parsed.data.skills,
+    portfolio_links: parsed.data.portfolioLinks
+  });
+
+  if (makerError) {
+    return { ok: false, code: "MAKER_PROFILE_ERROR", message: makerError.message };
+  }
+
+  revalidatePath("/maker/dashboard");
+  return { ok: true, data: { nextPath: "/maker/dashboard" }, message: "Maker 프로필이 생성되었습니다." };
 }
 
 export async function saveOnboardingAction(payload: ProfileInput): Promise<ActionResult> {
@@ -178,6 +232,7 @@ export async function completeOnboardingAndRecommendAction(
     });
 
     revalidatePath("/results");
+    revalidatePath("/dashboard");
 
     return {
       ok: true,
@@ -496,6 +551,153 @@ export async function getSettingsSummaryAction(): Promise<
     data: {
       account: profile,
       myRequests: myRequests ?? [],
+      myProjects: myProjects ?? []
+    }
+  };
+}
+
+export async function deleteRequestAction(requestId: string): Promise<ActionResult> {
+  const { supabase, user } = await getCurrentContext();
+  if (!user) {
+    return { ok: false, code: "UNAUTHORIZED", message: "로그인이 필요합니다." };
+  }
+
+  const { data: request, error: requestError } = await supabase
+    .from("requests")
+    .select("id, user_id, status")
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (requestError || !request) {
+    return { ok: false, code: "NOT_FOUND", message: "요청을 찾을 수 없습니다." };
+  }
+
+  if (request.user_id !== user.id) {
+    return forbidden("본인 요청만 삭제할 수 있습니다.");
+  }
+
+  const { data: linkedProject } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("request_id", requestId)
+    .maybeSingle();
+
+  if (linkedProject || request.status === "selected") {
+    return {
+      ok: false,
+      code: "INVALID_STATE",
+      message: "이미 프로젝트가 연결된 요청은 삭제할 수 없습니다."
+    };
+  }
+
+  const { error: deleteError } = await supabase
+    .from("requests")
+    .delete()
+    .eq("id", requestId)
+    .eq("user_id", user.id);
+
+  if (deleteError) {
+    return { ok: false, code: "DELETE_FAILED", message: deleteError.message };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/settings");
+
+  return { ok: true, data: undefined, message: "요청이 삭제되었습니다." };
+}
+
+export async function getDashboardDataAction(): Promise<
+  ActionResult<{
+    account: unknown;
+    recommendations: unknown[];
+    myRequests: unknown[];
+    myProjects: unknown[];
+  }>
+> {
+  const { supabase, user, profile } = await getCurrentContext();
+  if (!user) {
+    return { ok: false, code: "UNAUTHORIZED", message: "로그인이 필요합니다." };
+  }
+
+  const { data: recommendations, error: recommendationsError } = await supabase
+    .from("recommendations")
+    .select("id, fit_decision, fit_reason, created_at, updated_at, profile_snapshot, items")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false });
+
+  if (recommendationsError) {
+    return { ok: false, code: "QUERY_FAILED", message: recommendationsError.message };
+  }
+
+  const { data: myRequests } = await supabase
+    .from("requests")
+    .select("id, title, status, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  const { data: myProjects } = await supabase
+    .from("projects")
+    .select("id, status, created_at, request_id")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  return {
+    ok: true,
+    data: {
+      account: profile,
+      recommendations: recommendations ?? [],
+      myRequests: myRequests ?? [],
+      myProjects: myProjects ?? []
+    }
+  };
+}
+
+export async function getMakerDashboardAction(): Promise<
+  ActionResult<{
+    makerProfile: unknown;
+    openRequests: unknown[];
+    myBids: unknown[];
+    myProjects: unknown[];
+  }>
+> {
+  const { supabase, user, profile } = await getCurrentContext();
+  if (!user || !profile) {
+    return { ok: false, code: "UNAUTHORIZED", message: "로그인이 필요합니다." };
+  }
+
+  if (profile.role !== "MAKER" && profile.role !== "ADMIN") {
+    return { ok: false, code: "FORBIDDEN", message: "Maker 계정만 접근할 수 있습니다." };
+  }
+
+  const { data: makerProfile } = await supabase
+    .from("maker_profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const { data: openRequestsRaw } = await supabase.rpc("rpc_list_open_requests", {
+    limit_count: 20,
+    offset_count: 0
+  });
+
+  const { data: myBids } = await supabase
+    .from("bids")
+    .select("id, request_id, price, delivery_days, status, created_at, requests(title, status)")
+    .eq("maker_id", user.id)
+    .order("created_at", { ascending: false });
+
+  const { data: myProjects } = await supabase
+    .from("projects")
+    .select("id, status, created_at, request_id, requests(title)")
+    .eq("maker_id", user.id)
+    .order("created_at", { ascending: false });
+
+  return {
+    ok: true,
+    data: {
+      makerProfile: makerProfile ?? null,
+      openRequests: openRequestsRaw ?? [],
+      myBids: myBids ?? [],
       myProjects: myProjects ?? []
     }
   };

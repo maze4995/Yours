@@ -24,11 +24,7 @@ export default async function OnboardingPage() {
     : undefined;
 
   return (
-    <section className="space-y-4">
-      <h1 className="text-3xl font-bold">사용자 프로파일링</h1>
-      <p className="text-sm text-muted-foreground">
-        입력한 정보는 추천 품질과 맞춤 개발 요청 정확도를 높이는 데 사용됩니다.
-      </p>
+    <section className="space-y-8 py-4">
       <OnboardingForm initialValue={initialValue} />
     </section>
   );

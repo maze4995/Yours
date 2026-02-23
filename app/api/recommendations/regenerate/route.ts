@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server";
 import { runRecommendationFlow } from "@/lib/recommendation/service";
 import type { ProfileInput } from "@/lib/types";
 
@@ -38,11 +39,30 @@ export async function POST() {
   };
 
   try {
+    // 서비스 롤로 RLS 우회해서 삭제 (일반 유저는 delete 권한 없음)
+    const adminClient = createSupabaseAdminClient();
+    const { error: deleteError } = await adminClient
+      .from("recommendations")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (deleteError) {
+      console.error("[regenerate] 캐시 삭제 실패:", deleteError.message);
+      return NextResponse.json(
+        { code: "DELETE_ERROR", message: "기존 추천 삭제에 실패했습니다." },
+        { status: 500 }
+      );
+    }
+
     const result = await runRecommendationFlow({
       supabase,
       userId: user.id,
       profile: profileInput
     });
+
+    // Next.js 서버 컴포넌트 캐시 무효화
+    revalidatePath("/results");
+    revalidatePath("/dashboard");
 
     return NextResponse.json(result);
   } catch (error) {

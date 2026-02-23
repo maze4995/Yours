@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ProfileInput, RecommendationResult, SoftwareCatalogItem } from "@/lib/types";
 import { createProfileFingerprint, decideFitDecision, scoreCatalogCandidates } from "@/lib/recommendation/scoring";
-import { generateRecommendationItems } from "@/lib/recommendation/openai";
+import { generateFitAnalysis, generateRecommendationItems } from "@/lib/recommendation/openai";
 
 export async function runRecommendationFlow(params: {
   supabase: SupabaseClient;
@@ -19,6 +19,9 @@ export async function runRecommendationFlow(params: {
     .maybeSingle();
 
   if (cached) {
+    // Keep cached recommendation as the latest analysis touch for dashboard history.
+    await supabase.from("recommendations").update({ updated_at: new Date().toISOString() }).eq("id", cached.id);
+
     return {
       recommendationId: cached.id,
       items: cached.items,
@@ -40,6 +43,17 @@ export async function runRecommendationFlow(params: {
   const scored = scoreCatalogCandidates(profile, catalog);
   const items = await generateRecommendationItems(profile, scored);
   const fit = decideFitDecision(items);
+
+  // OpenAI로 개인화된 분석 리포트 생성 (실패 시 기본값 유지)
+  const aiAnalysis = await generateFitAnalysis(
+    profile,
+    fit.fitDecision,
+    items,
+    scored.slice(0, 3)
+  );
+  if (aiAnalysis) {
+    fit.fitReason = aiAnalysis;
+  }
   const candidateIds = scored.slice(0, 8).map((candidate) => candidate.item.id);
 
   const { data: created, error: createError } = await supabase

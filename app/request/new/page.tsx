@@ -16,10 +16,12 @@ export default async function NewRequestPage({ searchParams }: NewRequestPagePro
 
   return (
     <section className="space-y-4">
-      <h1 className="text-3xl font-bold">맞춤 개발 요청</h1>
-      <p className="text-sm text-muted-foreground">
-        요청이 `open` 상태가 되면 검증된 Maker가 입찰하고, 선택 시 프로젝트가 자동 생성됩니다.
-      </p>
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold">나만을 위한 프로그램 만들기</h1>
+        <p className="text-sm text-muted-foreground">
+          몇 가지 질문에 답하면 AI가 의뢰서를 대신 작성해드려요. 기술 지식은 전혀 필요 없어요.
+        </p>
+      </div>
       <RequestForm recommendationId={params.recommendationId ?? null} />
     </section>
   );

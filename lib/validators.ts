@@ -49,3 +49,16 @@ export const updateProjectStatusSchema = z.object({
   status: z.enum(["active", "delivered", "accepted", "closed"]),
   note: z.string().max(500).optional()
 });
+
+export const makerOnboardingSchema = z.object({
+  displayName: z.string().min(2, "이름을 입력해 주세요.").max(50, "50자 이내로 입력해 주세요."),
+  headline: z.string().max(100, "100자 이내로 입력해 주세요.").optional().default(""),
+  skills: z
+    .array(z.string().trim().min(1))
+    .min(1, "스킬을 최소 1개 입력해 주세요.")
+    .max(20, "스킬은 최대 20개까지 입력할 수 있습니다."),
+  portfolioLinks: z
+    .array(z.string().url("올바른 URL 형식이 아닙니다."))
+    .max(3, "포트폴리오 링크는 최대 3개까지 입력할 수 있습니다.")
+    .default([])
+});

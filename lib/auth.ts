@@ -1,20 +1,34 @@
 import { redirect } from "next/navigation";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { type UserRole } from "@/lib/types";
 
-export async function getCurrentUser() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+type CurrentUserContext = {
+  supabase: SupabaseClient | null;
+  user: User | null;
+};
 
-  return { supabase, user };
+export async function getCurrentUser() {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    return { supabase, user } satisfies CurrentUserContext;
+  } catch (error) {
+    console.warn(
+      "[auth] Supabase client unavailable. Configure .env.local first.",
+      error
+    );
+    return { supabase: null, user: null } satisfies CurrentUserContext;
+  }
 }
 
 export async function getCurrentUserProfile() {
   const { supabase, user } = await getCurrentUser();
 
-  if (!user) {
+  if (!supabase || !user) {
     return { supabase, user: null, profile: null };
   }
 
@@ -29,7 +43,7 @@ export async function getCurrentUserProfile() {
 
 export async function requireAuth() {
   const { supabase, user } = await getCurrentUser();
-  if (!user) {
+  if (!supabase || !user) {
     redirect("/auth");
   }
 

@@ -5,14 +5,22 @@ import { signOutAndRedirectAction } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const authedLinks: Array<{ href: Route; label: string }> = [
+const userLinks: Array<{ href: Route; label: string }> = [
   { href: "/onboarding", label: "프로파일링" },
   { href: "/results", label: "추천 결과" },
+  { href: "/dashboard" as Route, label: "대시보드" }
+];
+
+const makerLinks: Array<{ href: Route; label: string }> = [
+  { href: "/maker/dashboard" as Route, label: "Maker 대시보드" },
   { href: "/settings", label: "내 정보" }
 ];
 
 export async function SiteHeader() {
   const { user, profile } = await getCurrentUserProfile();
+
+  const isMaker = profile?.role === "MAKER";
+  const authedLinks = isMaker ? makerLinks : userLinks;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur">

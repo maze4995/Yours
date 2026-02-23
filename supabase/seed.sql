@@ -12,11 +12,14 @@ insert into public.software_catalog (
   is_active
 )
 values
+  -- ═══════════════════════════════════════
+  -- Project Management / 협업
+  -- ═══════════════════════════════════════
   (
     'Notion',
     'Project Management',
     array['product manager', 'operations', 'founder'],
-    array['knowledge-base', 'collaboration', 'docs'],
+    array['knowledge-base', 'collaboration', 'docs', 'tasks'],
     '문서, 위키, 프로젝트 관리를 결합한 올인원 워크스페이스',
     'Free + Team',
     'https://www.notion.so',
@@ -26,37 +29,63 @@ values
     true
   ),
   (
-    'ClickUp',
+    'Flow (플로우)',
     'Project Management',
-    array['project manager', 'agency', 'operations'],
-    array['tasks', 'collaboration', 'automation'],
-    '태스크 중심의 팀 생산성 관리 플랫폼',
-    'Free + Business',
-    'https://clickup.com',
-    array['태스크/스프린트', '자동화 룰', '대시보드', '문서 결합'],
-    array['프로젝트 가시성 우수', '자동화 기본 제공'],
-    array['초기 학습 곡선', '구성 복잡도'],
+    array['operations', 'pm', 'founder', 'small team', 'marketing manager'],
+    array['tasks', 'collaboration', 'workflow', 'kanban', 'automation'],
+    '한국 스타트업·중소기업 친화형 태스크 관리 협업 플랫폼',
+    'Freemium',
+    'https://flow.team',
+    array['태스크/칸반', '프로젝트 대시보드', '팀 메신저 내장', '파일 공유'],
+    array['한국어 UI 완전 지원', '직관적 온보딩', '카카오 계정 연동'],
+    array['외부 앱 연동 수 제한', '고급 리포팅 부족'],
     true
   ),
   (
-    'Asana',
+    '카카오워크 (Kakao Work)',
     'Project Management',
-    array['operations', 'marketing manager', 'pm'],
-    array['workflows', 'task-management', 'collaboration'],
-    '업무 흐름 시각화와 협업을 지원하는 프로젝트 툴',
-    'Free + Premium',
-    'https://asana.com',
-    array['보드/타임라인', '목표 연계', '자동화', '리포팅'],
-    array['직관적 UI', '팀 협업에 강함'],
-    array['고급 기능은 유료', '복잡한 권한 모델은 제한'],
+    array['founder', 'operations', 'marketing manager', 'small team', 'pm'],
+    array['collaboration', 'messaging', 'tasks', 'scheduling', 'workflow'],
+    '카카오 기반 비즈니스 메신저 + 협업 올인원 플랫폼',
+    'Freemium',
+    'https://kakaowork.com',
+    array['팀 채팅/영상통화', '태스크 관리', '전자결재', '캘린더'],
+    array['카카오 계정 연동 간편', '무료 플랜 기능 충분', '모바일 앱 완성도 높음'],
+    array['외부 서비스 연동 제한적', '대규모 조직 권한 관리 복잡'],
+    true
+  ),
+  (
+    '네이버웍스 (Naver Works)',
+    'Project Management',
+    array['operations', 'founder', 'small team', 'pm', 'marketing manager'],
+    array['collaboration', 'email', 'calendar', 'tasks', 'scheduling'],
+    '이메일·캘린더·드라이브·메신저를 통합한 클라우드 비즈니스 협업 도구',
+    'Freemium',
+    'https://naver.worksmobile.com',
+    array['비즈니스 메일', '공유 캘린더', '드라이브', '화상회의'],
+    array['네이버 계정 연동', '중소기업 무료 플랜 제공', '모바일 앱 안정적'],
+    array['글로벌 서비스 연동 약함', '고급 자동화 기능 미흡'],
+    true
+  ),
+  (
+    '두레이 (Dooray!)',
+    'Project Management',
+    array['product manager', 'operations', 'developer', 'pm'],
+    array['project-management', 'tasks', 'collaboration', 'email', 'workflow'],
+    'NHN의 메일·메신저·프로젝트·캘린더 통합 업무 플랫폼',
+    'Paid',
+    'https://dooray.com',
+    array['프로젝트/이슈 트래킹', '비즈니스 메일', '위키', '전자결재'],
+    array['올인원 업무 통합', '보안 인증(ISMS) 취득', '대기업 레퍼런스 다수'],
+    array['초기 학습 비용', '디자인 다소 구식'],
     true
   ),
   (
     'Jira',
     'Project Management',
     array['developer', 'engineering manager', 'scrum master'],
-    array['agile', 'issue-tracking', 'sprints'],
-    '애자일 개발팀을 위한 이슈 추적/스프린트 관리 도구',
+    array['agile', 'issue-tracking', 'sprints', 'workflow'],
+    '애자일 개발팀을 위한 이슈 추적·스프린트 관리 도구',
     'Standard + Premium',
     'https://www.atlassian.com/software/jira',
     array['백로그/스프린트', '워크플로우 커스터마이징', '릴리즈 트래킹', '자동화'],
@@ -68,7 +97,7 @@ values
     'Linear',
     'Project Management',
     array['developer', 'startup founder', 'product manager'],
-    array['issue-tracking', 'fast-ui', 'engineering'],
+    array['issue-tracking', 'fast-ui', 'engineering', 'sprints'],
     '빠른 속도와 단순한 UX의 개발 이슈 트래킹 도구',
     'Free + Team',
     'https://linear.app',
@@ -77,12 +106,29 @@ values
     array['비개발 업무 범용성 제한'],
     true
   ),
+
+  -- ═══════════════════════════════════════
+  -- CRM
+  -- ═══════════════════════════════════════
+  (
+    '채널톡 (Channel Talk)',
+    'CRM',
+    array['customer success', 'support', 'founder', 'marketer', 'sales', 'smb sales'],
+    array['crm', 'live-chat', 'support', 'helpdesk', 'messaging', 'pipeline'],
+    '한국 1위 고객 채팅 CRM. 라이브챗·마케팅·CRM을 하나로 통합',
+    'Free + Team',
+    'https://channel.io',
+    array['실시간 라이브챗', '고객 CRM', '마케팅 자동화', '챗봇', '팀 인박스'],
+    array['국내 스타트업 표준 툴', '설치 10분 완료', '카카오/네이버 채널 연동'],
+    array['고급 CRM은 유료 플랜 필요', '대규모 세일즈 파이프라인에는 한계'],
+    true
+  ),
   (
     'HubSpot CRM',
     'CRM',
     array['sales', 'marketing', 'customer success'],
-    array['crm', 'pipeline', 'lead-management'],
-    '리드 관리부터 세일즈 자동화까지 제공하는 CRM',
+    array['crm', 'pipeline', 'lead-management', 'automation'],
+    '리드 관리부터 세일즈 자동화까지 제공하는 글로벌 CRM',
     'Free + Starter',
     'https://www.hubspot.com',
     array['연락처/딜 파이프라인', '이메일 추적', '리포트', '자동화'],
@@ -94,7 +140,7 @@ values
     'Salesforce',
     'CRM',
     array['enterprise sales', 'operations', 'admin'],
-    array['crm', 'enterprise', 'automation'],
+    array['crm', 'enterprise', 'automation', 'pipeline'],
     '대규모 조직을 위한 엔터프라이즈 CRM 플랫폼',
     'Enterprise',
     'https://www.salesforce.com',
@@ -106,7 +152,7 @@ values
   (
     'Pipedrive',
     'CRM',
-    array['smb sales', 'founder'],
+    array['smb sales', 'founder', 'sales'],
     array['crm', 'pipeline', 'sales'],
     '중소팀을 위한 가벼운 세일즈 파이프라인 CRM',
     'Paid',
@@ -120,7 +166,7 @@ values
     'Zoho CRM',
     'CRM',
     array['sales', 'operations'],
-    array['crm', 'automation', 'analytics'],
+    array['crm', 'automation', 'analytics', 'pipeline'],
     '비용 효율형 CRM + 업무 자동화 도구',
     'Freemium',
     'https://www.zoho.com/crm',
@@ -129,89 +175,101 @@ values
     array['UI 학습 필요'],
     true
   ),
+
+  -- ═══════════════════════════════════════
+  -- Marketing Automation
+  -- ═══════════════════════════════════════
+  (
+    '스티비 (Stibee)',
+    'Marketing Automation',
+    array['marketer', 'founder', 'product manager', 'growth'],
+    array['email-marketing', 'newsletter', 'campaign', 'automation'],
+    '한국 이메일 뉴스레터 발송 1위. 구독자 관리부터 자동화 시나리오까지',
+    'Freemium',
+    'https://stibee.com',
+    array['이메일 에디터', '구독자 세그먼트', '자동화 시나리오', '통계 분석'],
+    array['한국어 UI 최적화', '국내 이메일 발송 신뢰도 높음', '무료 1000명 지원'],
+    array['SMS/앱 푸시 미지원', '글로벌 발송 대비 기능 단순'],
+    true
+  ),
+  (
+    'Notifly (노티플라이)',
+    'Marketing Automation',
+    array['marketer', 'growth marketer', 'product manager', 'ecommerce marketer'],
+    array['customer-engagement', 'automation', 'retention', 'email-marketing', 'push-notification'],
+    '앱 푸시·이메일·카카오 알림톡을 한 곳에서 자동화하는 한국형 고객 커뮤니케이션 플랫폼',
+    'Paid',
+    'https://notifly.tech',
+    array['멀티채널 자동화(푸시·메일·카카오)', '이벤트 트리거', '고객 세그먼트', 'A/B 테스트'],
+    array['카카오 알림톡 네이티브 연동', '한국 앱 서비스 최적화', '이벤트 기반 정밀 타겟'],
+    array['초기 SDK 설치 필요', '소규모 프로젝트엔 비용 부담'],
+    true
+  ),
+  (
+    '아임웹 (Imweb)',
+    'Marketing Automation',
+    array['ecommerce marketer', 'founder', 'marketer', 'smb sales'],
+    array['ecommerce', 'online-store', 'marketing', 'automation', 'retention'],
+    '국내 이커머스 쇼핑몰 빌더 + 마케팅 자동화 올인원 플랫폼',
+    'Paid',
+    'https://imweb.me',
+    array['쇼핑몰 구축', '네이버·카카오 채널 연동', '주문/정산 관리', '리마케팅'],
+    array['국내 결제 PG 완벽 지원', '네이버 쇼핑/카카오 연동 내장', '초기 비용 낮음'],
+    array['디자인 자유도 제한', '대형 물량 처리 시 성능 이슈 가능'],
+    true
+  ),
   (
     'Mailchimp',
     'Marketing Automation',
     array['marketer', 'founder'],
     array['email-marketing', 'campaign', 'automation'],
-    '이메일 캠페인 중심 마케팅 자동화 툴',
+    '해외 고객 대상 이메일 캠페인 중심 마케팅 자동화 툴',
     'Freemium',
     'https://mailchimp.com',
     array['세그먼트', '자동 시나리오', 'A/B 테스트'],
-    array['초기 마케팅 자동화 쉬움'],
-    array['고급 시나리오는 제한'],
+    array['글로벌 이메일 마케팅 표준', '초기 셋업 쉬움'],
+    array['한국 발송 IP 신뢰도 이슈', '고급 시나리오 제한'],
     true
   ),
-  (
-    'Klaviyo',
-    'Marketing Automation',
-    array['ecommerce marketer', 'crm manager'],
-    array['retention', 'email', 'sms'],
-    '이커머스 리텐션 중심 자동화 플랫폼',
-    'Paid',
-    'https://www.klaviyo.com',
-    array['이벤트 기반 자동화', '고객 세분화', 'SMS/Email 통합'],
-    array['리텐션 성과 개선에 강함'],
-    array['초기 설정 난이도'],
-    true
-  ),
-  (
-    'Braze',
-    'Marketing Automation',
-    array['growth marketer', 'product marketer'],
-    array['customer-engagement', 'automation', 'personalization'],
-    '고급 고객 여정 오케스트레이션 도구',
-    'Enterprise',
-    'https://www.braze.com',
-    array['멀티채널 오케스트레이션', '개인화', '실험'],
-    array['고급 마케팅 운영 가능'],
-    array['엔터프라이즈 비용'],
-    true
-  ),
-  (
-    'Intercom',
-    'Customer Support',
-    array['customer success', 'support'],
-    array['support', 'live-chat', 'helpdesk'],
-    '고객 메시징과 지원센터를 결합한 서비스 플랫폼',
-    'Paid',
-    'https://www.intercom.com',
-    array['라이브챗', '헬프센터', '티켓팅', '봇'],
-    array['고객 응대 품질 향상'],
-    array['규모 확장 시 비용 증가'],
-    true
-  ),
+
+  -- ═══════════════════════════════════════
+  -- Customer Support
+  -- ═══════════════════════════════════════
   (
     'Zendesk',
     'Customer Support',
     array['support manager', 'operations'],
-    array['ticketing', 'support', 'sla'],
+    array['ticketing', 'support', 'sla', 'helpdesk'],
     '티켓 기반 고객지원 운영 표준 툴',
     'Suite',
     'https://www.zendesk.com',
     array['티켓/SLA', '지식베이스', '옴니채널 지원'],
     array['운영 성숙도 향상', '기업 지원 기능 풍부'],
-    array['설정 복잡도'],
+    array['설정 복잡도', '비용 부담'],
     true
   ),
   (
     'Freshdesk',
     'Customer Support',
-    array['support team', 'startup'],
-    array['ticketing', 'automation', 'support'],
+    array['support team', 'startup', 'small team'],
+    array['ticketing', 'automation', 'support', 'helpdesk'],
     '중소팀 친화형 고객지원 티켓 시스템',
     'Freemium',
     'https://www.freshworks.com/freshdesk',
     array['티켓 자동화', 'FAQ', 'SLA'],
-    array['도입 난이도 낮음'],
+    array['도입 난이도 낮음', '가격 합리적'],
     array['고급 맞춤 기능 제한'],
     true
   ),
+
+  -- ═══════════════════════════════════════
+  -- Internal Tooling
+  -- ═══════════════════════════════════════
   (
     'Airtable',
     'Internal Tooling',
-    array['ops', 'pm', 'analyst'],
-    array['database', 'no-code', 'workflow'],
+    array['ops', 'pm', 'analyst', 'operations'],
+    array['database', 'no-code', 'workflow', 'automation'],
     '스프레드시트 감성의 노코드 데이터베이스',
     'Freemium',
     'https://airtable.com',
@@ -223,8 +281,8 @@ values
   (
     'Retool',
     'Internal Tooling',
-    array['ops engineer', 'internal tools developer'],
-    array['internal-tools', 'low-code', 'database'],
+    array['ops engineer', 'internal tools developer', 'developer'],
+    array['internal-tools', 'low-code', 'database', 'automation'],
     '사내 운영 도구를 빠르게 만드는 로우코드 플랫폼',
     'Paid',
     'https://retool.com',
@@ -234,31 +292,22 @@ values
     true
   ),
   (
-    'Monday.com',
-    'Project Management',
-    array['operations', 'marketing', 'pm'],
-    array['workflow', 'collaboration', 'automation'],
-    '시각적 보드 기반 업무 운영 플랫폼',
+    '비피움 (Bpium)',
+    'Internal Tooling',
+    array['operations', 'pm', 'ops', 'founder', 'analyst'],
+    array['database', 'no-code', 'crm', 'workflow', 'automation'],
+    '한국형 노코드 데이터베이스 + 내부 업무 시스템 빌더',
     'Paid',
-    'https://monday.com',
-    array['보드/자동화', '대시보드', '템플릿'],
-    array['비개발 직군 친화적'],
-    array['세부 권한 설계 제약'],
+    'https://bpium.com',
+    array['커스텀 DB 설계', '폼/프로세스 자동화', '팀 권한 관리', '대시보드'],
+    array['코딩 없이 사내 시스템 구축', '한국 데이터 보안 규정 준수', '국내 지원 빠름'],
+    array['사용자 수 기반 요금', '초기 학습 필요'],
     true
   ),
-  (
-    'Trello',
-    'Project Management',
-    array['small team', 'founder'],
-    array['kanban', 'task-management', 'collaboration'],
-    '가벼운 칸반 기반 태스크 관리 툴',
-    'Freemium',
-    'https://trello.com',
-    array['칸반 보드', '카드 자동화', '간편 공유'],
-    array['학습 부담 낮음'],
-    array['복잡한 프로젝트에는 부족'],
-    true
-  ),
+
+  -- ═══════════════════════════════════════
+  -- Design / Collaboration
+  -- ═══════════════════════════════════════
   (
     'Figma',
     'Design Collaboration',
@@ -275,8 +324,8 @@ values
   (
     'Miro',
     'Collaboration',
-    array['product manager', 'consultant', 'team lead'],
-    array['whiteboard', 'ideation', 'workshop'],
+    array['product manager', 'consultant', 'team lead', 'operations'],
+    array['whiteboard', 'ideation', 'workshop', 'collaboration'],
     '온라인 화이트보드 협업 도구',
     'Freemium',
     'https://miro.com',
@@ -285,11 +334,15 @@ values
     array['정형 데이터 관리에는 부적합'],
     true
   ),
+
+  -- ═══════════════════════════════════════
+  -- Data Analytics
+  -- ═══════════════════════════════════════
   (
     'Google Analytics 4',
     'Data Analytics',
     array['marketer', 'analyst', 'founder'],
-    array['analytics', 'web', 'events'],
+    array['analytics', 'web', 'events', 'dashboard'],
     '웹/앱 이벤트 분석 도구',
     'Free',
     'https://analytics.google.com',
@@ -299,10 +352,23 @@ values
     true
   ),
   (
+    '핵클 (Hackle)',
+    'Data Analytics',
+    array['product manager', 'developer', 'growth', 'analyst', 'founder'],
+    array['analytics', 'product-analytics', 'ab-testing', 'dashboard', 'behavior'],
+    '한국 스타트업을 위한 A/B 테스트·피처 플래그·제품 분석 성장 플랫폼',
+    'Freemium',
+    'https://hackle.io',
+    array['A/B 테스트', '피처 플래그', '이벤트 트래킹', '퍼널 분석'],
+    array['한국어 완전 지원', '빠른 SDK 연동', '국내 레퍼런스 다수'],
+    array['글로벌 도구 대비 생태계 작음', '고급 코호트 분석 제한'],
+    true
+  ),
+  (
     'Mixpanel',
     'Data Analytics',
-    array['product analyst', 'growth'],
-    array['product-analytics', 'funnel', 'retention'],
+    array['product analyst', 'growth', 'product manager'],
+    array['product-analytics', 'funnel', 'retention', 'analytics'],
     '제품 지표 분석과 퍼널 최적화 플랫폼',
     'Freemium',
     'https://mixpanel.com',
@@ -315,7 +381,7 @@ values
     'Amplitude',
     'Data Analytics',
     array['product manager', 'analyst'],
-    array['product-analytics', 'behavior', 'insights'],
+    array['product-analytics', 'behavior', 'analytics', 'dashboard'],
     '행동 데이터 기반 제품 분석 플랫폼',
     'Freemium',
     'https://amplitude.com',
@@ -325,24 +391,11 @@ values
     true
   ),
   (
-    'Tableau',
-    'Data Analytics',
-    array['data analyst', 'bi engineer'],
-    array['dashboard', 'bi', 'visualization'],
-    'BI 대시보드 시각화 솔루션',
-    'Enterprise',
-    'https://www.tableau.com',
-    array['시각화 대시보드', '데이터 소스 연결', '권한 배포'],
-    array['시각화 품질 높음'],
-    array['라이선스 비용 높음'],
-    true
-  ),
-  (
     'Power BI',
     'Data Analytics',
-    array['analyst', 'operations'],
-    array['dashboard', 'bi', 'microsoft'],
-    '마이크로소프트 생태계 친화형 BI 도구',
+    array['analyst', 'operations', 'bi engineer'],
+    array['dashboard', 'bi', 'visualization', 'analytics'],
+    '마이크로소프트 생태계 친화형 BI 대시보드 도구',
     'Paid',
     'https://powerbi.microsoft.com',
     array['리포트/대시보드', '데이터 모델링', '팀 공유'],
@@ -350,30 +403,77 @@ values
     array['복잡 모델링 학습 필요'],
     true
   ),
+
+  -- ═══════════════════════════════════════
+  -- Finance / Accounting
+  -- ═══════════════════════════════════════
+  (
+    '이카운트 ERP (Ecount)',
+    'Finance/Accounting',
+    array['finance manager', 'startup founder', 'operations', 'ops'],
+    array['accounting', 'erp', 'invoicing', 'finance', 'inventory'],
+    '한국 중소기업 전용 클라우드 ERP. 회계·재고·영업·인사를 통합 관리',
+    'Paid',
+    'https://ecount.com',
+    array['회계 장부/세금계산서', '재고 관리', '영업 관리', '인사/급여'],
+    array['국내 세무/회계 법규 완벽 반영', '저렴한 월정액', '도입 레퍼런스 많음'],
+    array['UI가 다소 구식', '모바일 앱 기능 제한'],
+    true
+  ),
+  (
+    '캐시노트 (Cashnote)',
+    'Finance/Accounting',
+    array['small business owner', 'founder', 'operations', 'ops'],
+    array['accounting', 'finance', 'expense-tracking', 'invoicing', 'dashboard'],
+    '소상공인·스타트업을 위한 매출·지출 자동 집계 및 경영 분석 앱',
+    'Freemium',
+    'https://cashnote.kr',
+    array['카드·계좌 자동 집계', '매출 리포트', '비용 분석', '세금계산서'],
+    array['연동 자동화로 입력 최소화', '무료 기본 기능 충분', '스마트폰 앱 완성도'],
+    array['대기업 수준 ERP 기능 미흡', '다수 법인 관리 한계'],
+    true
+  ),
   (
     'QuickBooks',
     'Finance/Accounting',
     array['finance manager', 'startup founder'],
     array['accounting', 'finance', 'invoicing'],
-    '중소기업 회계 및 청구 관리 도구',
+    '글로벌 기준 중소기업 회계 및 청구 도구 (해외 거래 기업용)',
     'Paid',
     'https://quickbooks.intuit.com',
     array['회계 장부', '청구서', '지출 추적'],
-    array['회계 자동화 기본 제공'],
-    array['지역별 세무 요구는 별도 검토 필요'],
+    array['글로벌 회계 표준 지원', '외화 처리 편리'],
+    array['한국 세무 법규 별도 설정 필요', '원화 처리 불편'],
+    true
+  ),
+
+  -- ═══════════════════════════════════════
+  -- HR / Recruiting
+  -- ═══════════════════════════════════════
+  (
+    '그리팅 (Greeting)',
+    'HR/Recruiting',
+    array['hr manager', 'recruiter', 'founder', 'startup founder'],
+    array['ats', 'hiring', 'recruiting'],
+    '한국 스타트업을 위한 채용 파이프라인 ATS. 지원자 관리부터 합격 통보까지',
+    'Freemium',
+    'https://greeting.hr',
+    array['채용 파이프라인', '지원자 DB', '면접 일정', '합격 통보 자동화'],
+    array['국내 채용 플랫폼 연동', '스타트업 레퍼런스 다수', '무료 플랜으로 시작 가능'],
+    array['대기업 대량 채용에는 기능 부족', '외부 HR 시스템 연동 제한'],
     true
   ),
   (
-    'Xero',
-    'Finance/Accounting',
-    array['finance', 'operations'],
-    array['accounting', 'bookkeeping', 'invoicing'],
-    '클라우드 기반 중소기업 회계 플랫폼',
+    '원티드스페이스 (Wanted Space)',
+    'HR/Recruiting',
+    array['hr manager', 'talent acquisition', 'recruiter', 'founder'],
+    array['ats', 'hiring', 'hr', 'recruiting'],
+    '원티드 채용 플랫폼 기반 HR 관리 솔루션. 채용부터 온보딩·인사 관리까지',
     'Paid',
-    'https://www.xero.com',
-    array['은행 연동', '장부 자동화', '청구 관리'],
-    array['UI 사용성 우수'],
-    array['특수 회계 처리 한계'],
+    'https://wantedspace.ai',
+    array['채용 파이프라인', '인사 정보 관리', '온보딩', '조직도'],
+    array['원티드 채용 DB와 연동', '채용·HR 일원화', '한국 IT 기업 선호'],
+    array['중소기업 비용 부담', '글로벌 채용은 기능 제한'],
     true
   ),
   (
@@ -381,27 +481,18 @@ values
     'HR/Recruiting',
     array['hr manager', 'recruiter'],
     array['ats', 'hiring', 'recruiting'],
-    '채용 파이프라인 운영용 ATS 솔루션',
+    '글로벌 채용 파이프라인 운영용 ATS (해외 인재 채용 기업용)',
     'Paid',
     'https://www.workable.com',
     array['채용 파이프라인', '면접 스케줄링', '후보자 DB'],
-    array['채용 운영 표준화'],
-    array['고급 브랜딩 커스텀 제한'],
+    array['채용 운영 표준화', '글로벌 구인 플랫폼 연동'],
+    array['한국어 UI 미흡', '한국 채용 플랫폼 미연동'],
     true
   ),
-  (
-    'Greenhouse',
-    'HR/Recruiting',
-    array['hr', 'talent acquisition'],
-    array['ats', 'hiring', 'enterprise'],
-    '대규모 채용 프로세스에 강한 ATS',
-    'Enterprise',
-    'https://www.greenhouse.com',
-    array['채용 단계 설계', '면접 평가', '리포트'],
-    array['채용 품질 관리 강화'],
-    array['초기 셋업 비용'],
-    true
-  ),
+
+  -- ═══════════════════════════════════════
+  -- Productivity
+  -- ═══════════════════════════════════════
   (
     'Calendly',
     'Productivity',
