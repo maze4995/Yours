@@ -15,6 +15,7 @@ export type ProfileInput = {
   currentTools: string[];
   budgetPreference: string;
   deadlinePreference: string;
+  mainPainDetail?: string;
 };
 
 export type SoftwareCatalogItem = {

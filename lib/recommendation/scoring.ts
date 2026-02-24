@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+﻿import { createHash } from "node:crypto";
 import type { FitDecision, ProfileInput, RecommendationItem, SoftwareCatalogItem } from "@/lib/types";
 
 export type ScoredCandidate = {
@@ -15,88 +15,151 @@ function includesAny(text: string, tokens: string[]): boolean {
   return tokens.some((token) => text.includes(token));
 }
 
-function intersectCount(values: string[], terms: string[]): number {
-  const set = new Set(values.map(normalize));
-  return terms.filter((term) => set.has(normalize(term))).length;
+function splitTokens(value: string): string[] {
+  const genericTokens = new Set([
+    "업무",
+    "관리",
+    "문제",
+    "불편",
+    "어려움",
+    "현재",
+    "사용",
+    "필요",
+    "처리",
+    "작업",
+    "시스템",
+    "도구",
+    "기능",
+    "서비스",
+    "회사",
+    "팀",
+    "담당",
+    "운영",
+    "개선",
+    "효율",
+    "데이터"
+  ]);
+
+  return value
+    .toLowerCase()
+    .split(/[^a-z0-9가-힣]+/)
+    .filter((token) => token.length > 1 && !genericTokens.has(token));
 }
 
-// ── 한국어 → 영어 태그/역할 매핑 ──
 const KO_TO_EN_TAGS: Record<string, string[]> = {
-  // 목표
-  "반복 작업 자동화": ["automation", "workflow"],
-  "업무 자동화": ["automation", "workflow"],
-  "고객 응답 속도 개선": ["support", "live-chat", "crm"],
-  "응답시간 단축": ["support", "live-chat"],
-  "매출/전환율 높이기": ["crm", "pipeline", "email-marketing", "retention"],
-  "매출 전환율 개선": ["crm", "pipeline", "email-marketing"],
-  "팀 협업 개선": ["collaboration", "tasks"],
-  "팀 협업": ["collaboration"],
-  "데이터 한눈에 보기": ["analytics", "dashboard", "bi", "database"],
-  "데이터 분석 강화": ["analytics", "product-analytics", "bi"],
-  "비용 절감": ["automation", "finance", "accounting"],
-  // 불편사항
-  "수작업이 너무 많아요": ["automation", "workflow", "no-code"],
-  "고객 문의 대응 느림": ["support", "live-chat", "helpdesk", "ticketing"],
-  "협업·커뮤니케이션 누락": ["collaboration", "tasks"],
-  "협업/커뮤니케이션 누락": ["collaboration", "tasks"],
-  "데이터가 흩어져 있어요": ["database", "analytics", "bi", "no-code"],
-  "보고서 작성 번거로움": ["dashboard", "bi", "analytics"],
-  "비용 추적 어려움": ["finance", "accounting", "invoicing"],
-  "채용/인사 관리 복잡": ["ats", "hiring", "recruiting"],
-  "일정 조율이 힘들어요": ["scheduling", "calendar"],
+  "반복 업무 자동화": ["automation", "workflow", "integration"],
+  "고객 응답": ["support", "live-chat", "helpdesk", "crm"],
+  "데이터 분석": ["analytics", "dashboard", "bi", "database"],
+  "비용": ["finance", "accounting", "invoicing"],
+  "일정": ["scheduling", "calendar", "tasks"],
+  "장부": ["accounting", "bookkeeping", "finance", "invoicing", "receipt"],
+  "회계": ["accounting", "bookkeeping", "finance", "invoicing", "tax"],
+  "정산": ["accounting", "bookkeeping", "finance", "invoicing", "settlement"],
+  "매입": ["inventory", "procurement", "finance"],
+  "매출": ["sales", "crm", "invoicing", "pos"],
+  "재고": ["inventory", "stock", "warehouse", "pos"],
+  "식당": ["restaurant", "pos", "inventory", "order", "reservation"],
+  "음식점": ["restaurant", "pos", "inventory", "order", "reservation"],
+  "카페": ["restaurant", "pos", "inventory", "order"],
+  "예약": ["reservation", "scheduling", "calendar"],
+  "주문": ["order", "pos", "inventory", "payment"],
+  "영수증": ["receipt", "invoicing", "accounting", "finance"],
+  "급여": ["payroll", "hr", "finance"],
+  "세금": ["tax", "accounting", "finance"],
+  "bookkeeping": ["accounting", "finance", "invoicing"],
+  "ledger": ["accounting", "finance", "invoicing"],
+  "restaurant": ["restaurant", "pos", "inventory", "order"],
+  "inventory": ["inventory", "stock", "warehouse", "pos"],
+  "pos": ["pos", "order", "payment", "inventory"]
 };
 
 const KO_TO_EN_ROLES: Record<string, string[]> = {
-  "마케터": ["marketer", "marketing", "growth marketer", "ecommerce marketer"],
-  "개발자": ["developer", "engineering manager", "startup founder"],
-  "창업자/대표": ["founder", "startup founder", "smb sales"],
-  "운영/기획": ["operations", "pm", "product manager", "ops"],
-  "디자이너": ["designer", "product manager"],
-  "기타": [],
+  "마케터": ["marketer", "marketing", "growth"],
+  "개발자": ["developer", "engineering"],
+  "창업": ["founder", "startup founder"],
+  "대표": ["founder", "owner", "ceo"],
+  "운영": ["operations", "ops"],
+  "기획": ["pm", "product manager", "operations"],
+  "디자이너": ["designer"]
 };
 
 const KO_TO_EN_INDUSTRY: Record<string, string[]> = {
-  "이커머스": ["ecommerce", "ecommerce marketer", "retention"],
+  "이커머스": ["ecommerce", "retail"],
   "교육": ["education"],
-  "saas (구독형 서비스)": ["saas", "product manager", "growth"],
-  "saas": ["saas", "product manager"],
-  "제조": ["manufacturing", "operations"],
-  "유통/물류": ["operations", "logistics"],
+  "saas": ["saas"],
+  "제조": ["manufacturing"],
+  "물류": ["logistics", "warehouse"],
   "금융": ["finance", "accounting"],
-  "헬스케어": ["healthcare", "operations"],
+  "헬스케어": ["healthcare"],
+  "식당": ["restaurant", "food"],
+  "음식점": ["restaurant", "food"],
+  "카페": ["restaurant", "beverage"]
 };
 
-function expandKoTerms(terms: string[]): string[] {
-  const expanded: string[] = [];
-  for (const term of terms) {
-    expanded.push(normalize(term));
-    const mapped = KO_TO_EN_TAGS[term] ?? [];
-    expanded.push(...mapped.map(normalize));
+function expandMappedSignals(input: string, mapper: Record<string, string[]>): string[] {
+  const normalizedInput = normalize(input);
+  const expanded = [normalizedInput];
+
+  for (const [key, mapped] of Object.entries(mapper)) {
+    if (normalizedInput.includes(normalize(key))) {
+      expanded.push(...mapped.map(normalize));
+    }
   }
+
   return expanded;
 }
 
-function expandKoRole(jobTitle: string): string[] {
-  const key = Object.keys(KO_TO_EN_ROLES).find((k) => normalize(jobTitle).includes(normalize(k)));
-  return key ? [normalize(jobTitle), ...KO_TO_EN_ROLES[key]] : [normalize(jobTitle)];
+function expandMappedSignalsFromList(values: string[], mapper: Record<string, string[]>): string[] {
+  const expanded: string[] = [];
+
+  for (const value of values) {
+    expanded.push(...expandMappedSignals(value, mapper));
+  }
+
+  return expanded;
 }
 
-function expandKoIndustry(industry: string): string[] {
-  const key = Object.keys(KO_TO_EN_INDUSTRY).find((k) => normalize(industry).includes(normalize(k)));
-  return key ? [normalize(industry), ...KO_TO_EN_INDUSTRY[key]] : [normalize(industry)];
+function buildItemSearchText(item: SoftwareCatalogItem): string {
+  return normalize(
+    [
+      item.name,
+      item.category,
+      item.description,
+      item.target_roles.join(" "),
+      item.tags.join(" "),
+      item.key_features.join(" ")
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+}
+
+function unique(values: string[]): string[] {
+  return [...new Set(values.filter((value) => value.length > 1))];
+}
+
+function getMainPainSignals(profile: ProfileInput): string[] {
+  const detail = profile.mainPainDetail?.trim();
+  if (!detail) return [];
+
+  const tokenSignals = splitTokens(detail);
+  const mappedSignals = expandMappedSignals(detail, KO_TO_EN_TAGS);
+
+  return unique([...tokenSignals, ...mappedSignals]);
 }
 
 function tokenizeProfile(profile: ProfileInput): string[] {
   return [
     profile.jobTitle,
     profile.industry,
+    profile.mainPainDetail ?? "",
     ...profile.goals,
     ...profile.painPoints,
     ...profile.currentTools,
-    ...expandKoRole(profile.jobTitle),
-    ...expandKoIndustry(profile.industry),
-    ...expandKoTerms(profile.goals),
-    ...expandKoTerms(profile.painPoints),
+    ...expandMappedSignals(profile.jobTitle, KO_TO_EN_ROLES),
+    ...expandMappedSignals(profile.industry, KO_TO_EN_INDUSTRY),
+    ...expandMappedSignalsFromList(profile.goals, KO_TO_EN_TAGS),
+    ...expandMappedSignalsFromList(profile.painPoints, KO_TO_EN_TAGS)
   ]
     .join(" ")
     .toLowerCase()
@@ -104,91 +167,120 @@ function tokenizeProfile(profile: ProfileInput): string[] {
     .filter((token) => token.length > 1);
 }
 
-export function scoreCatalogCandidates(
-  profile: ProfileInput,
-  catalog: SoftwareCatalogItem[]
-): ScoredCandidate[] {
-  // 한국어 → 영어 확장 포함한 신호들
-  const expandedRoles = expandKoRole(profile.jobTitle);
-  const expandedIndustryTokens = expandKoIndustry(profile.industry);
-  const expandedGoalTags = expandKoTerms(profile.goals);
-  const expandedPainTags = expandKoTerms(profile.painPoints);
+export function scoreCatalogCandidates(profile: ProfileInput, catalog: SoftwareCatalogItem[]): ScoredCandidate[] {
+  const expandedRoles = expandMappedSignals(profile.jobTitle, KO_TO_EN_ROLES);
+  const expandedIndustryTokens = expandMappedSignals(profile.industry, KO_TO_EN_INDUSTRY);
+  const expandedGoalTags = expandMappedSignalsFromList(profile.goals, KO_TO_EN_TAGS);
+  const expandedPainTags = expandMappedSignalsFromList(profile.painPoints, KO_TO_EN_TAGS);
+  const mainPainSignals = getMainPainSignals(profile);
   const profileTokens = tokenizeProfile(profile);
+
+  const allExpandedTerms = unique([...expandedGoalTags, ...expandedPainTags, ...mainPainSignals]);
 
   const scored = catalog.map((item) => {
     let score = 0;
     const reasons: string[] = [];
+    const itemText = buildItemSearchText(item);
 
-    // 1. 직무 매칭 (한국어+영어 확장 포함)
     const roleMatches = item.target_roles.filter((role) => {
-      const roleTokens = role.toLowerCase().split(" ");
-      return expandedRoles.some((signal) =>
-        roleTokens.some((token) => signal.includes(token) || token.includes(signal))
-      );
+      const roleTokens = normalize(role).split(" ");
+      return expandedRoles.some((signal) => roleTokens.some((token) => signal.includes(token) || token.includes(signal)));
     });
+
     if (roleMatches.length > 0) {
       const roleScore = Math.min(30, 12 + roleMatches.length * 8);
       score += roleScore;
-      reasons.push(`직무 적합성 ${roleScore}점`);
+      reasons.push(`직무 적합도 +${roleScore}`);
     }
 
-    // 2. 태그 매칭 (한국어→영어 변환 포함)
-    const allExpandedTerms = [...expandedGoalTags, ...expandedPainTags];
-    const tagMatchCount = item.tags.filter((tag) =>
-      allExpandedTerms.includes(normalize(tag))
-    ).length;
-    if (tagMatchCount > 0) {
-      const tagScore = Math.min(35, tagMatchCount * 9);
-      score += tagScore;
-      reasons.push(`태그 매칭 ${tagScore}점`);
+    const semanticMatchCount = allExpandedTerms.filter((term) => itemText.includes(term)).length;
+    if (semanticMatchCount > 0) {
+      const semanticScore = Math.min(40, 8 + semanticMatchCount * 4);
+      score += semanticScore;
+      reasons.push(`문제/목표 신호 매칭 +${semanticScore}`);
     }
 
-    // 3. 카테고리 매칭
-    const categoryHit = includesAny(item.category.toLowerCase(), profileTokens);
+    const categoryHit = includesAny(normalize(item.category), profileTokens);
     if (categoryHit) {
-      score += 10;
-      reasons.push("카테고리 매칭 10점");
+      score += 8;
+      reasons.push("카테고리 매칭 +8");
     }
 
-    // 4. 업종 매칭
-    const industryHit = expandedIndustryTokens.some(
-      (token) => item.description.toLowerCase().includes(token) || item.tags.some((t) => normalize(t).includes(token))
-    );
+    const industryHit = expandedIndustryTokens.some((token) => itemText.includes(token));
     if (industryHit) {
       score += 8;
-      reasons.push("업종 매칭 8점");
+      reasons.push("업종 맥락 매칭 +8");
     }
 
-    // 5. 예산 적합성
-    const budget = profile.budgetPreference.toLowerCase();
-    const pricing = (item.pricing_model ?? "").toLowerCase();
+    const budget = normalize(profile.budgetPreference);
+    const pricing = normalize(item.pricing_model ?? "");
     if ((budget.includes("무료") || budget.includes("free")) && pricing.includes("free")) {
       score += 7;
-      reasons.push("예산 적합 7점");
+      reasons.push("예산 적합 +7");
     }
-    if ((budget.includes("50만원 이상") || budget.includes("투자")) && pricing.includes("enterprise")) {
+    if ((budget.includes("50") || budget.includes("외주") || budget.includes("개발")) && pricing.includes("enterprise")) {
       score += 6;
-      reasons.push("고급 플랜 적합 6점");
+      reasons.push("고급 플랜 적합 +6");
     }
 
-    // 6. 팀 규모 적합성
     if (profile.teamSize >= 20 && item.tags.some((tag) => normalize(tag).includes("collaboration"))) {
-      score += 6;
-      reasons.push("팀 협업 확장성 6점");
-    }
-    if (profile.teamSize <= 3 && item.tags.some((tag) => ["kanban", "no-code", "scheduling"].includes(normalize(tag)))) {
       score += 5;
-      reasons.push("소규모 팀 적합 5점");
+      reasons.push("팀 협업 확장성 +5");
     }
 
-    return { item, score, reasons };
+    if (profile.teamSize <= 3 && item.tags.some((tag) => ["kanban", "no-code", "scheduling"].includes(normalize(tag)))) {
+      score += 4;
+      reasons.push("소규모 도입 용이 +4");
+    }
+
+    if (mainPainSignals.length > 0) {
+      const detailMatchCount = mainPainSignals.filter((signal) => itemText.includes(signal)).length;
+      const strictSignalMode = mainPainSignals.length >= 4;
+
+      if (detailMatchCount > 0) {
+        const detailScore = Math.min(26, detailMatchCount * 6);
+        score += detailScore;
+        reasons.push(`핵심 불편 상세 매칭 +${detailScore}`);
+      } else {
+        const penalty = strictSignalMode ? 32 : 18;
+        score -= penalty;
+        reasons.push(`핵심 불편 상세와 연관성 낮음 -${penalty}`);
+      }
+
+      if (detailMatchCount <= 1 && mainPainSignals.length >= 4) {
+        score -= 10;
+        reasons.push("핵심 불편 해결력 부족 -10");
+      }
+
+      if (!industryHit && strictSignalMode) {
+        score -= 12;
+        reasons.push("업종 맥락 미스매치 -12");
+      }
+    }
+
+    return {
+      item,
+      score: Math.max(0, Math.round(score)),
+      reasons
+    };
   });
 
-  // 점수 내림차순 정렬. 동점이면 태그 많은 항목 우선, 그 이후는 무작위 섞기 (항상 같은 알파벳 순 방지)
-  const shuffled = scored.sort(() => Math.random() - 0.5); // 먼저 랜덤 섞기
-  return shuffled.sort((a, b) => {
+  const strictSignals = mainPainSignals.length >= 4;
+  const stronglyAligned =
+    strictSignals
+      ? scored.filter((candidate) => {
+          const itemText = buildItemSearchText(candidate.item);
+          const hitCount = mainPainSignals.filter((signal) => itemText.includes(signal)).length;
+          return hitCount >= 1;
+        })
+      : scored;
+
+  const rankingPool = stronglyAligned.length >= 3 ? stronglyAligned : scored;
+
+  return rankingPool.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
-    return b.item.tags.length - a.item.tags.length; // 태그 더 많은 항목 우선
+    if (b.reasons.length !== a.reasons.length) return b.reasons.length - a.reasons.length;
+    return a.item.name.localeCompare(b.item.name);
   });
 }
 
@@ -199,7 +291,7 @@ export function decideFitDecision(items: RecommendationItem[]): { fitDecision: F
   if (items.length === 0) {
     return {
       fitDecision: "custom_build",
-      fitReason: "매칭 가능한 소프트웨어 후보가 없어 맞춤 개발이 더 적합합니다."
+      fitReason: "매칭 가능한 소프트웨어가 없어 맞춤 개발이 더 적합합니다."
     };
   }
 
@@ -212,7 +304,7 @@ export function decideFitDecision(items: RecommendationItem[]): { fitDecision: F
 
   return {
     fitDecision: "software_fit",
-    fitReason: "상위 후보가 핵심 요구를 충족하여 기존 소프트웨어 도입이 가능합니다."
+    fitReason: "상위 후보가 핵심 요구를 충족하여 기존 소프트웨어 도입이 적합합니다."
   };
 }
 

@@ -26,7 +26,7 @@ export async function GET(_: Request, { params }: Params) {
     .maybeSingle();
 
   if (!maker) {
-    return NextResponse.json({ code: "NOT_FOUND", message: "Maker를 찾을 수 없습니다." }, { status: 404 });
+    return NextResponse.json({ code: "NOT_FOUND", message: "개발자 정보를 찾을 수 없습니다." }, { status: 404 });
   }
 
   return NextResponse.json({ maker });

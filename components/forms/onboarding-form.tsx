@@ -22,6 +22,7 @@ type OnboardingState = {
   industry: string;
   teamSize: number;
   painPoints: string[];
+  mainPainDetail: string;
   goals: string[];
   currentTools: string[];
   budgetPreference: string;
@@ -80,7 +81,7 @@ const DEADLINE_OPTIONS: { label: string; description: string }[] = [
   { label: "급하지 않아요", description: "천천히 좋은 방법을 찾고 싶어요" },
 ];
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 10;
 
 function getInitialState(initialValue?: Partial<ProfileInput>): OnboardingState {
   return {
@@ -89,6 +90,7 @@ function getInitialState(initialValue?: Partial<ProfileInput>): OnboardingState 
     industry: initialValue?.industry ?? "",
     teamSize: initialValue?.teamSize ?? 0,
     painPoints: initialValue?.painPoints ?? [],
+    mainPainDetail: initialValue?.mainPainDetail ?? "",
     goals: initialValue?.goals ?? [],
     currentTools: initialValue?.currentTools ?? [],
     budgetPreference: initialValue?.budgetPreference ?? "",
@@ -199,10 +201,11 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
       case 3: return state.industry.trim().length >= 2;
       case 4: return state.teamSize > 0;
       case 5: return state.painPoints.length >= 1;
-      case 6: return state.goals.length >= 1;
-      case 7: return state.currentTools.length >= 1;
-      case 8: return state.budgetPreference.trim().length >= 2;
-      case 9: return state.deadlinePreference.trim().length >= 2;
+      case 6: return true; // mainPainDetail is optional
+      case 7: return state.goals.length >= 1;
+      case 8: return state.currentTools.length >= 1;
+      case 9: return state.budgetPreference.trim().length >= 2;
+      case 10: return state.deadlinePreference.trim().length >= 2;
       default: return false;
     }
   };
@@ -227,6 +230,7 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
     industry: state.industry.trim(),
     teamSize: state.teamSize || 1,
     painPoints: state.painPoints,
+    mainPainDetail: state.mainPainDetail.trim() || undefined,
     goals: state.goals,
     currentTools: state.currentTools,
     budgetPreference: state.budgetPreference.trim(),
@@ -436,8 +440,8 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
               />
               <Button
                 type="button"
-                variant="outline"
                 onClick={() => addCustomChip("painPoints", customPain, () => setCustomPain(""))}
+                className="h-10 min-w-24 whitespace-nowrap rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
               >
                 추가
               </Button>
@@ -469,8 +473,44 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
           </div>
         )}
 
-        {/* Step 6: 목표 */}
+        {/* Step 6: 핵심 불편 상세 (선택) */}
         {step === 6 && (
+          <div className="space-y-6">
+            <div className="space-y-1">
+              <p className="text-3xl font-bold leading-tight">
+                그 중 <span className="text-primary">가장 불편한 것</span>을<br />좀 더 설명해 주세요
+              </p>
+              <p className="text-sm text-muted-foreground">
+                선택사항이에요 — 더 구체적일수록 AI 분석이 정확해집니다
+              </p>
+            </div>
+            <HintBox>
+              예: &ldquo;매일 아침 고객 주문 50건을 엑셀에 손으로 옮기는 데 2시간이 걸려요. 실수도 많고요&rdquo;
+            </HintBox>
+            <textarea
+              value={state.mainPainDetail}
+              onChange={(e) => setState((prev) => ({ ...prev, mainPainDetail: e.target.value }))}
+              placeholder="매일 반복하는 그 작업을 적어주세요 (건너뛰어도 됩니다)"
+              rows={4}
+              className="w-full resize-none rounded-xl border border-input bg-card px-4 py-3 text-sm leading-relaxed placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            {state.painPoints.length > 0 && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+                <p className="mb-2 text-xs font-semibold text-primary">앞에서 선택한 불편사항</p>
+                <div className="flex flex-wrap gap-2">
+                  {state.painPoints.map((p) => (
+                    <span key={p} className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs text-primary">
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Step 7: 목표 */}
+        {step === 7 && (
           <div className="space-y-6">
             <div className="space-y-1">
               <p className="text-3xl font-bold leading-tight">
@@ -510,8 +550,8 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
               />
               <Button
                 type="button"
-                variant="outline"
                 onClick={() => addCustomChip("goals", customGoal, () => setCustomGoal(""))}
+                className="h-10 min-w-24 whitespace-nowrap rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
               >
                 추가
               </Button>
@@ -543,8 +583,8 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
           </div>
         )}
 
-        {/* Step 7: 현재 툴 */}
-        {step === 7 && (
+        {/* Step 8: 현재 툴 */}
+        {step === 8 && (
           <div className="space-y-6">
             <div className="space-y-1">
               <p className="text-3xl font-bold leading-tight">
@@ -591,8 +631,8 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
               />
               <Button
                 type="button"
-                variant="outline"
                 onClick={() => addCustomChip("currentTools", customTool, () => setCustomTool(""))}
+                className="h-10 min-w-24 whitespace-nowrap rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
               >
                 추가
               </Button>
@@ -626,8 +666,8 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
           </div>
         )}
 
-        {/* Step 8: 예산 */}
-        {step === 8 && (
+        {/* Step 9: 예산 */}
+        {step === 9 && (
           <div className="space-y-6">
             <div className="space-y-1">
               <p className="text-3xl font-bold leading-tight">
@@ -649,8 +689,8 @@ export function OnboardingForm({ initialValue }: OnboardingFormProps) {
           </div>
         )}
 
-        {/* Step 9: 도입 기간 */}
-        {step === 9 && (
+        {/* Step 10: 도입 기간 */}
+        {step === 10 && (
           <div className="space-y-6">
             <div className="space-y-1">
               <p className="text-3xl font-bold leading-tight">

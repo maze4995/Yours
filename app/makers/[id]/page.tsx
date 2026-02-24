@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireAuth } from "@/lib/auth";
@@ -9,7 +9,7 @@ type MakerProfilePageProps = {
 
 export default async function MakerProfilePage({ params }: MakerProfilePageProps) {
   const { id } = await params;
-  const { supabase } = await requireAuth();
+  const { supabase, user } = await requireAuth();
   const { data: maker } = await supabase
     .from("maker_profiles")
     .select(
@@ -19,6 +19,9 @@ export default async function MakerProfilePage({ params }: MakerProfilePageProps
     .maybeSingle();
 
   if (!maker) {
+    if (user.id === id) {
+      redirect("/maker/onboarding");
+    }
     notFound();
   }
 

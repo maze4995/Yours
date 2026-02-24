@@ -84,7 +84,7 @@ export function MakerOnboardingForm() {
         return;
       }
 
-      toast.success("Maker 프로필이 생성되었습니다!");
+      toast.success("개발자 프로필이 생성되었습니다!");
       router.push(result.data.nextPath as never);
       router.refresh();
     });
@@ -212,7 +212,7 @@ export function MakerOnboardingForm() {
               처리 중...
             </span>
           ) : (
-            "Maker 프로필 완성하기"
+            "개발자 프로필 완성하기"
           )}
         </Button>
       </CardContent>

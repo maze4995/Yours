@@ -9,11 +9,11 @@ type SubmitBidRuleInput = {
 
 export function canSubmitBid(input: SubmitBidRuleInput): { allowed: boolean; reason?: string } {
   if (input.role !== "MAKER") {
-    return { allowed: false, reason: "Maker 계정만 입찰 가능합니다." };
+    return { allowed: false, reason: "개발자 계정만 입찰 가능합니다." };
   }
 
   if (!input.isVerifiedMaker) {
-    return { allowed: false, reason: "검증된 Maker만 입찰 가능합니다." };
+    return { allowed: false, reason: "검증된 개발자만 입찰 가능합니다." };
   }
 
   if (input.requestStatus !== "open") {

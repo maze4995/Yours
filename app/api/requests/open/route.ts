@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (profile?.role !== "MAKER" || !makerProfile?.is_verified) {
-    return NextResponse.json({ code: "FORBIDDEN", message: "검증된 Maker만 접근할 수 있습니다." }, { status: 403 });
+    return NextResponse.json({ code: "FORBIDDEN", message: "검증된 개발자만 접근할 수 있습니다." }, { status: 403 });
   }
 
   const url = new URL(request.url);

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { RequestForm } from "@/components/forms/request-form";
+import { RequestAssistantChat } from "@/components/forms/request-assistant-chat";
 import { requireRole } from "@/lib/auth";
 
 type NewRequestPageProps = {
@@ -23,6 +24,7 @@ export default async function NewRequestPage({ searchParams }: NewRequestPagePro
         </p>
       </div>
       <RequestForm recommendationId={params.recommendationId ?? null} />
+      <RequestAssistantChat />
     </section>
   );
 }

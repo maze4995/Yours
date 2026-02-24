@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { OnboardingForm } from "@/components/forms/onboarding-form";
+import { OnboardingAssistantChat } from "@/components/forms/onboarding-assistant-chat";
 import { getCurrentUserProfile } from "@/lib/auth";
 import type { ProfileInput } from "@/lib/types";
 
@@ -26,6 +27,7 @@ export default async function OnboardingPage() {
   return (
     <section className="space-y-8 py-4">
       <OnboardingForm initialValue={initialValue} />
+      <OnboardingAssistantChat />
     </section>
   );
 }

@@ -51,10 +51,10 @@ export function SoftwareAvatar({
     <div className="relative flex-shrink-0">
       <div
         className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden",
+          "flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl",
           showLogo
             ? "border border-border/60 bg-white shadow-sm"
-            : cn(bg, textColor, "text-base font-bold"),
+            : cn(bg, textColor, "text-lg font-bold"),
         )}
       >
         {showLogo ? (
@@ -64,7 +64,7 @@ export function SoftwareAvatar({
             alt={`${name} logo`}
             className={cn(
               "object-contain",
-              stage === "google" ? "h-8 w-8" : "h-9 w-9",
+              stage === "google" ? "h-9 w-9" : "h-10 w-10",
             )}
             onError={handleError}
           />
@@ -74,8 +74,8 @@ export function SoftwareAvatar({
       </div>
 
       {isTop && (
-        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 shadow-sm">
-          <Star className="h-3 w-3 fill-white text-white" />
+        <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 shadow-sm">
+          <Star className="h-3.5 w-3.5 fill-white text-white" />
         </span>
       )}
     </div>

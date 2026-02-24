@@ -53,6 +53,31 @@ export async function runRecommendationFlow(params: {
   );
   if (aiAnalysis) {
     fit.fitReason = aiAnalysis;
+
+    try {
+      const parsed = JSON.parse(aiAnalysis) as {
+        custom_build_framework?: {
+          final_decision?: {
+            custom_build?: boolean;
+          };
+        };
+        solution_direction?: {
+          can_existing_software_solve?: boolean;
+        };
+      };
+
+      const customBuildDecision = parsed?.custom_build_framework?.final_decision?.custom_build;
+      if (typeof customBuildDecision === "boolean") {
+        fit.fitDecision = customBuildDecision ? "custom_build" : "software_fit";
+      } else {
+        const canExisting = parsed?.solution_direction?.can_existing_software_solve;
+        if (typeof canExisting === "boolean") {
+          fit.fitDecision = canExisting ? "software_fit" : "custom_build";
+        }
+      }
+    } catch (error) {
+      console.warn("[runRecommendationFlow] fit decision sync skipped:", error);
+    }
   }
   const candidateIds = scored.slice(0, 8).map((candidate) => candidate.item.id);
 

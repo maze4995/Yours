@@ -60,7 +60,7 @@ export default async function BidsPage({ params }: BidsPageProps) {
                 <Card key={bid.id}>
                   <CardHeader>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <CardTitle className="text-lg">{(maker?.display_name as string) ?? "Maker"}</CardTitle>
+                      <CardTitle className="text-lg">{(maker?.display_name as string) ?? "개발자"}</CardTitle>
                       <Badge variant={bid.status === "accepted" ? "success" : "secondary"}>{bid.status}</Badge>
                     </div>
                     <CardDescription>{(maker?.headline as string) ?? "개발자 소개 미등록"}</CardDescription>
@@ -140,7 +140,7 @@ export default async function BidsPage({ params }: BidsPageProps) {
     <section className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">요청 입찰</h1>
-        <p className="mt-2 text-sm text-muted-foreground">검증된 Maker만 입찰할 수 있습니다.</p>
+        <p className="mt-2 text-sm text-muted-foreground">검증된 개발자만 입찰할 수 있습니다.</p>
       </div>
 
       <Card>
@@ -156,7 +156,7 @@ export default async function BidsPage({ params }: BidsPageProps) {
       {!makerProfile?.is_verified ? (
         <Card>
           <CardContent className="py-6 text-sm text-destructive">
-            현재 계정은 검증된 Maker가 아니어서 입찰할 수 없습니다.
+            현재 계정은 검증된 개발자가 아니어서 입찰할 수 없습니다.
           </CardContent>
         </Card>
       ) : myBid ? (

@@ -121,6 +121,50 @@ export async function signOutAction(): Promise<ActionResult<{ nextPath: string }
   return { ok: true, data: { nextPath: "/" } };
 }
 
+export async function selectSocialRoleAction(
+  role: "USER" | "MAKER"
+): Promise<ActionResult<{ nextPath: string }>> {
+  const { supabase, user, profile } = await getCurrentContext();
+  if (!supabase || !user) {
+    return { ok: false, code: "UNAUTHORIZED", message: "로그인이 필요합니다." };
+  }
+
+  if (role !== "USER" && role !== "MAKER") {
+    return { ok: false, code: "VALIDATION_ERROR", message: "역할 선택값이 올바르지 않습니다." };
+  }
+
+  if (profile?.onboarding_completed) {
+    if (profile.role === "MAKER") {
+      return { ok: true, data: { nextPath: "/maker/dashboard" } };
+    }
+    return { ok: true, data: { nextPath: "/results" } };
+  }
+
+  const nextRole = role;
+
+  if (!profile) {
+    const { error: insertError } = await supabase.from("profiles").upsert({
+      id: user.id,
+      role: nextRole,
+      onboarding_completed: false
+    });
+    if (insertError) {
+      return { ok: false, code: "PROFILE_UPDATE_ERROR", message: insertError.message };
+    }
+  } else if (profile.role !== nextRole) {
+    const { error: updateError } = await supabase.from("profiles").update({ role: nextRole }).eq("id", user.id);
+    if (updateError) {
+      return { ok: false, code: "PROFILE_UPDATE_ERROR", message: updateError.message };
+    }
+  }
+
+  if (nextRole === "MAKER") {
+    return { ok: true, data: { nextPath: "/maker/onboarding" } };
+  }
+
+  return { ok: true, data: { nextPath: "/onboarding" } };
+}
+
 export async function completeMakerOnboardingAction(
   payload: MakerOnboardingInput
 ): Promise<ActionResult<{ nextPath: string }>> {
@@ -158,7 +202,7 @@ export async function completeMakerOnboardingAction(
   }
 
   revalidatePath("/maker/dashboard");
-  return { ok: true, data: { nextPath: "/maker/dashboard" }, message: "Maker 프로필이 생성되었습니다." };
+  return { ok: true, data: { nextPath: "/maker/dashboard" }, message: "개발자 프로필이 생성되었습니다." };
 }
 
 export async function saveOnboardingAction(payload: ProfileInput): Promise<ActionResult> {
@@ -335,7 +379,7 @@ export async function submitBidAction(
   }
 
   if (profile.role !== "MAKER") {
-    return forbidden("Maker 계정만 입찰할 수 있습니다.");
+    return forbidden("개발자 계정만 입찰할 수 있습니다.");
   }
 
   const { data: makerProfile } = await supabase
@@ -345,7 +389,7 @@ export async function submitBidAction(
     .maybeSingle();
 
   if (!makerProfile?.is_verified) {
-    return forbidden("검증된 Maker만 입찰할 수 있습니다.");
+    return forbidden("검증된 개발자만 입찰할 수 있습니다.");
   }
 
   const { data: openRequests } = await supabase.rpc("rpc_list_open_requests", {
@@ -666,7 +710,7 @@ export async function getMakerDashboardAction(): Promise<
   }
 
   if (profile.role !== "MAKER" && profile.role !== "ADMIN") {
-    return { ok: false, code: "FORBIDDEN", message: "Maker 계정만 접근할 수 있습니다." };
+    return { ok: false, code: "FORBIDDEN", message: "개발자 계정만 접근할 수 있습니다." };
   }
 
   const { data: makerProfile } = await supabase
@@ -674,11 +718,6 @@ export async function getMakerDashboardAction(): Promise<
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
-
-  const { data: openRequestsRaw } = await supabase.rpc("rpc_list_open_requests", {
-    limit_count: 20,
-    offset_count: 0
-  });
 
   const { data: myBids } = await supabase
     .from("bids")
@@ -696,9 +735,50 @@ export async function getMakerDashboardAction(): Promise<
     ok: true,
     data: {
       makerProfile: makerProfile ?? null,
-      openRequests: openRequestsRaw ?? [],
+      openRequests: [],
       myBids: myBids ?? [],
       myProjects: myProjects ?? []
     }
+  };
+}
+
+export async function setMakerVerificationAction(
+  makerUserId: string,
+  nextVerified: boolean
+): Promise<ActionResult> {
+  const { supabase, user, profile } = await getCurrentContext();
+  if (!user || !profile) {
+    return { ok: false, code: "UNAUTHORIZED", message: "로그인이 필요합니다." };
+  }
+
+  if (profile.role !== "ADMIN") {
+    return forbidden("관리자만 개발자 검증 상태를 변경할 수 있습니다.");
+  }
+
+  const { data: updated, error } = await supabase
+    .from("maker_profiles")
+    .update({
+      is_verified: nextVerified
+    })
+    .eq("user_id", makerUserId)
+    .select("user_id")
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false, code: "UPDATE_FAILED", message: error.message };
+  }
+
+  if (!updated) {
+    return { ok: false, code: "NOT_FOUND", message: "개발자 프로필을 찾을 수 없습니다." };
+  }
+
+  revalidatePath("/admin/makers");
+  revalidatePath("/maker/dashboard");
+  revalidatePath(`/makers/${makerUserId}`);
+
+  return {
+    ok: true,
+    data: undefined,
+    message: nextVerified ? "개발자 검증을 승인했습니다." : "개발자 검증을 해제했습니다."
   };
 }

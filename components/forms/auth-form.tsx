@@ -15,7 +15,6 @@ import { Spinner } from "@/components/ui/spinner";
 type Mode = "signin" | "signup";
 type SignupRole = "USER" | "MAKER";
 
-// ── 소셜 로그인 아이콘 ──────────────────────────────
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
@@ -71,29 +70,31 @@ export function AuthForm() {
           toast.error(result.message);
           return;
         }
-        toast.success("로그인 완료");
+        toast.success("로그인되었습니다.");
         router.push(result.data.nextPath as never);
         router.refresh();
-      } else {
-        const result = await signUpAction({ email, password, role: signupRole });
-        if (!result.ok) {
-          toast.error(result.message);
-          return;
-        }
-        toast.success("회원가입 완료");
-        router.push(result.data.nextPath as never);
-        router.refresh();
+        return;
       }
+
+      const result = await signUpAction({ email, password, role: signupRole });
+      if (!result.ok) {
+        toast.error(result.message);
+        return;
+      }
+      toast.success("회원가입이 완료되었습니다.");
+      router.push(result.data.nextPath as never);
+      router.refresh();
     });
   };
 
   const handleSocialLogin = (provider: "google" | "github" | "kakao") => {
     startTransition(async () => {
-      // 회원가입 모드에서 MAKER 선택 시 쿠키에 저장 (콜백에서 읽음)
-      if (mode === "signup" && signupRole === "MAKER") {
-        document.cookie = "oauth_intended_role=MAKER; path=/; max-age=300; SameSite=Lax";
+      if (mode === "signup") {
+        document.cookie = `oauth_intended_role=${signupRole}; path=/; max-age=300; SameSite=Lax`;
+        document.cookie = "oauth_flow_mode=signup; path=/; max-age=300; SameSite=Lax";
       } else {
         document.cookie = "oauth_intended_role=; path=/; max-age=0";
+        document.cookie = "oauth_flow_mode=signin; path=/; max-age=300; SameSite=Lax";
       }
 
       const supabase = createSupabaseBrowserClient();
@@ -114,10 +115,9 @@ export function AuthForm() {
     <Card className="mx-auto w-full max-w-md">
       <CardHeader>
         <CardTitle>{mode === "signin" ? "로그인" : "회원가입"}</CardTitle>
-        <CardDescription>이메일 또는 소셜 계정으로 시작하세요.</CardDescription>
+        <CardDescription>이메일 또는 소셜 계정으로 시작할 수 있습니다.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* 로그인 / 회원가입 탭 */}
         <div className="grid grid-cols-2 gap-2">
           <Button variant={mode === "signin" ? "default" : "outline"} onClick={() => setMode("signin")}>
             로그인
@@ -127,8 +127,7 @@ export function AuthForm() {
           </Button>
         </div>
 
-        {/* 회원가입 시: 역할 선택 */}
-        {mode === "signup" && (
+        {mode === "signup" ? (
           <div className="space-y-2">
             <Label>가입 유형</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -143,8 +142,8 @@ export function AuthForm() {
               >
                 <User className="h-5 w-5" />
                 <div className="text-center">
-                  <p className="font-medium">소프트웨어 추천</p>
-                  <p className="text-xs opacity-70">AI 분석으로 맞는 툴 찾기</p>
+                  <p className="font-medium">일반 사용자</p>
+                  <p className="text-xs opacity-70">AI 추천과 개발 의뢰</p>
                 </div>
               </button>
               <button
@@ -158,49 +157,35 @@ export function AuthForm() {
               >
                 <Code2 className="h-5 w-5" />
                 <div className="text-center">
-                  <p className="font-medium">Maker 참여</p>
-                  <p className="text-xs opacity-70">개발 의뢰 수주·입찰하기</p>
+                  <p className="font-medium">개발자</p>
+                  <p className="text-xs opacity-70">입찰과 프로젝트 수행</p>
                 </div>
               </button>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {/* 소셜 로그인 버튼 */}
         <div className="space-y-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full gap-2"
-            onClick={() => handleSocialLogin("google")}
-            disabled={pending}
-          >
+          <Button type="button" variant="outline" className="w-full gap-2" onClick={() => handleSocialLogin("google")} disabled={pending}>
             <GoogleIcon />
             Google로 계속하기
           </Button>
           <Button
             type="button"
             variant="outline"
-            className="w-full gap-2 bg-[#FEE500] text-[#3C1E1E] border-[#FEE500] hover:bg-[#F5DC00] hover:border-[#F5DC00] dark:bg-[#FEE500] dark:text-[#3C1E1E]"
+            className="w-full gap-2 border-[#FEE500] bg-[#FEE500] text-[#3C1E1E] hover:border-[#F5DC00] hover:bg-[#F5DC00] dark:bg-[#FEE500] dark:text-[#3C1E1E]"
             onClick={() => handleSocialLogin("kakao")}
             disabled={pending}
           >
             <KakaoIcon />
             카카오로 계속하기
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full gap-2"
-            onClick={() => handleSocialLogin("github")}
-            disabled={pending}
-          >
+          <Button type="button" variant="outline" className="w-full gap-2" onClick={() => handleSocialLogin("github")} disabled={pending}>
             <GithubIcon />
             GitHub로 계속하기
           </Button>
         </div>
 
-        {/* 구분선 */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-border" />
@@ -210,7 +195,6 @@ export function AuthForm() {
           </div>
         </div>
 
-        {/* 이메일/비밀번호 */}
         <div className="space-y-2">
           <Label htmlFor="email">이메일</Label>
           <Input
@@ -230,6 +214,7 @@ export function AuthForm() {
             onChange={(event) => setPassword(event.target.value)}
           />
         </div>
+
         <Button className="w-full" onClick={handleEmailSubmit} disabled={pending}>
           {pending ? (
             <span className="flex items-center gap-2">
@@ -239,7 +224,7 @@ export function AuthForm() {
           ) : mode === "signin" ? (
             "로그인"
           ) : signupRole === "MAKER" ? (
-            "Maker로 가입하기"
+            "개발자로 가입하기"
           ) : (
             "회원가입"
           )}

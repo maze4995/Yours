@@ -13,6 +13,9 @@ function isSupabaseConfigured() {
 export default async function AuthPage() {
   const { user, profile } = await getCurrentUserProfile();
   if (user) {
+    if (profile?.role === "MAKER") {
+      redirect("/maker/dashboard");
+    }
     redirect(profile?.onboarding_completed ? "/results" : "/onboarding");
   }
 

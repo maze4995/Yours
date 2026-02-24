@@ -47,7 +47,7 @@ const steps = [
     step: "03",
     icon: Code2,
     title: "맞춤 개발 매칭 (필요 시)",
-    desc: "기존 툴이 부족하면 검증된 개발자(Maker)가 가격·납기·접근방식을 직접 제안합니다.",
+    desc: "기존 툴이 부족하면 검증된 개발자가 가격·납기·접근방식을 직접 제안합니다.",
   },
 ];
 
@@ -71,7 +71,7 @@ const features = [
   },
   {
     icon: ShieldCheck,
-    title: "검증 Maker 역경매",
+    title: "검증 개발자 역경매",
     description:
       "의뢰서가 공개되면 검증된 개발자들이 가격·납기를 제안합니다. 비교 후 직접 선택하면 프로젝트가 시작됩니다.",
     badge: "역경매",
@@ -196,11 +196,11 @@ function AppPreview() {
 
 export default async function HomePage() {
   const { user, profile } = await getCurrentUserProfile();
+  const isMaker = profile?.role === "MAKER";
 
-  // ── 로그인 + 온보딩 완료 유저 → 개인화 화면 ──
-  if (user && profile?.onboarding_completed) {
-    const isMaker = profile.role === "MAKER";
-    const name = profile.full_name;
+  // ── 로그인 유저 개인화 화면 (MAKER는 온보딩 여부와 무관하게 전용 홈 노출) ──
+  if (user && (isMaker || profile?.onboarding_completed)) {
+    const name = profile?.full_name;
 
     const userActions = [
       {
@@ -228,26 +228,26 @@ export default async function HomePage() {
 
     const makerActions = [
       {
-        icon: LayoutDashboard,
-        title: "Maker 대시보드",
-        desc: "열린 의뢰 목록, 내 입찰 현황, 진행 중인 프로젝트를 확인합니다.",
-        href: "/maker/dashboard" as Route,
-        cta: "대시보드로",
+        icon: Search,
+        title: "개발자 의뢰 게시판",
+        desc: "열린 의뢰를 핵심 조건(예산/마감/우선순위) 중심으로 빠르게 확인하고 입찰하세요.",
+        href: "/maker/requests" as Route,
+        cta: "의뢰 보기"
       },
       {
-        icon: Search,
-        title: "열린 의뢰 탐색",
-        desc: "새로 올라온 맞춤 개발 의뢰를 확인하고 가격·납기를 직접 제안하세요.",
+        icon: LayoutDashboard,
+        title: "개발자 대시보드",
+        desc: "내 입찰 현황과 진행 중 프로젝트를 한 화면에서 관리합니다.",
         href: "/maker/dashboard" as Route,
-        cta: "의뢰 보기",
+        cta: "대시보드로"
       },
       {
         icon: User,
         title: "내 프로필",
-        desc: "포트폴리오·스킬·헤드라인을 최신 상태로 유지해 신뢰도를 높이세요.",
+        desc: "포트폴리오·스킬·검증 정보로 신뢰를 높여 선택받을 확률을 높이세요.",
         href: "/settings" as Route,
-        cta: "프로필 관리",
-      },
+        cta: "프로필 관리"
+      }
     ];
 
     const actions = isMaker ? makerActions : userActions;
@@ -270,7 +270,7 @@ export default async function HomePage() {
               <div className="animate-appear opacity-0">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/8 px-4 py-1.5 text-xs font-semibold text-primary">
                   {isMaker ? (
-                    <><Code2 className="h-3.5 w-3.5" /> Maker 대시보드</>
+                    <><Code2 className="h-3.5 w-3.5" /> 개발자 대시보드</>
                   ) : (
                     <><Sparkles className="h-3.5 w-3.5" /> 돌아오셨군요</>
                   )}
@@ -290,7 +290,7 @@ export default async function HomePage() {
                 {name ? `${name}님,` : ""}
                 <br />
                 {isMaker
-                  ? "새 프로젝트를 찾아보세요."
+                  ? "사용자의 문제를 해결할 의뢰를 찾아보세요."
                   : "소프트웨어 추천을 확인해보세요."}
               </h1>
 
@@ -302,7 +302,7 @@ export default async function HomePage() {
                 )}
               >
                 {isMaker
-                  ? "열린 의뢰를 확인하고 입찰해보세요. 새로운 프로젝트가 기다리고 있습니다."
+                  ? "이 서비스는 소프트웨어/AI에 익숙하지 않은 사용자를 돕는 플랫폼입니다. 개발자인 당신은 그 문제를 실제 기능과 제품으로 바꿔주는 핵심 파트너입니다."
                   : "AI가 분석한 최적의 툴을 확인하고, 필요하면 개발자에게 의뢰해보세요."}
               </p>
 
@@ -310,15 +310,16 @@ export default async function HomePage() {
               <div className="animate-appear opacity-0 [animation-delay:300ms] flex flex-wrap justify-center gap-4">
                 {isMaker ? (
                   <>
-                    <Link href={"/maker/dashboard" as Route}>
+                    <Link href="/maker/requests">
                       <Button size="lg" className="gap-2 px-8 text-base shadow-lg">
-                        <LayoutDashboard className="h-4 w-4" />
-                        Maker 대시보드
+                        <Search className="h-4 w-4" />
+                        개발자 의뢰 게시판
                       </Button>
                     </Link>
-                    <Link href="/settings">
-                      <Button size="lg" variant="ghost" className="px-8 text-base text-foreground/70">
-                        내 정보
+                    <Link href={"/maker/dashboard" as Route}>
+                      <Button size="lg" variant="ghost" className="gap-2 px-8 text-base text-foreground/70">
+                        <LayoutDashboard className="h-4 w-4" />
+                        내 입찰/프로젝트
                       </Button>
                     </Link>
                   </>
@@ -549,14 +550,14 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ⑥ Maker 모집 배너 */}
+      {/* ⑥ 개발자 모집 배너 */}
       <section className="bg-muted/20 px-4 py-20">
         <div className="mx-auto max-w-[1280px]">
           <div className="rounded-2xl border border-primary/20 bg-primary/5 px-8 py-12 text-center">
             <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
               <Code2 className="h-7 w-7 text-primary" />
             </div>
-            <h2 className="text-xl font-bold md:text-2xl">개발자(Maker)로 참여하세요</h2>
+            <h2 className="text-xl font-bold md:text-2xl">개발자로 참여하세요</h2>
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
               검증된 개발자로 등록하면 맞춤 개발 의뢰에 입찰할 수 있습니다.
               가격·납기·접근방식을 직접 제안하고 프로젝트를 수주해 보세요.
@@ -576,7 +577,7 @@ export default async function HomePage() {
             <Link href="/auth" className="mt-6 inline-block">
               <Button variant="outline" size="lg" className="gap-2">
                 <Code2 className="h-4 w-4" />
-                Maker로 가입하기
+                개발자로 가입하기
               </Button>
             </Link>
           </div>
