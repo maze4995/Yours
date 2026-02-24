@@ -118,7 +118,6 @@ export async function POST(request: Request) {
   try {
     const completion = await client.chat.completions.create({
       model,
-      temperature: 0.3,
       response_format: { type: "json_object" },
       messages: [
         {

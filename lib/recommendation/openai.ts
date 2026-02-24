@@ -188,6 +188,56 @@ function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
+const PROFILE_CONTEXT_STOPWORDS = new Set([
+  "업무",
+  "담당",
+  "직무",
+  "업종",
+  "산업",
+  "관리",
+  "운영",
+  "팀",
+  "실무",
+  "회사",
+  "서비스",
+  "분야",
+  "담당자",
+  "직원",
+  "대표",
+  "창업",
+  "마케팅",
+  "기획",
+  "개발",
+  "영업"
+]);
+
+function extractContextTokens(value: string): string[] {
+  return uniqueNonEmpty(
+    tokenize(value).filter((token) => token.length > 1 && !PROFILE_CONTEXT_STOPWORDS.has(token))
+  );
+}
+
+function hasProfileContext(text: string, profile: ProfileInput): boolean {
+  const normalized = normalize(text);
+  if (!normalized) return false;
+
+  const jobTokens = extractContextTokens(profile.jobTitle);
+  const industryTokens = extractContextTokens(profile.industry);
+
+  const jobMatched =
+    jobTokens.length === 0 || jobTokens.some((token) => normalized.includes(token));
+  const industryMatched =
+    industryTokens.length === 0 || industryTokens.some((token) => normalized.includes(token));
+
+  return jobMatched && industryMatched;
+}
+
+function buildProfileContextLine(profile: ProfileInput): string {
+  const job = profile.jobTitle?.trim() || "현재 직무";
+  const industry = profile.industry?.trim() || "현재 업종";
+  return `${job} 직무와 ${industry} 업종의 실제 업무 흐름을 기준으로 보면`;
+}
+
 function tokenize(value: string): string[] {
   return value
     .toLowerCase()
@@ -1118,7 +1168,11 @@ function enforceFrameworkDecision(framework: CustomBuildFramework): CustomBuildF
   };
 }
 
-function normalizeFitAnalysis(analysis: FitAnalysis, fallback: FitAnalysis): FitAnalysis {
+function normalizeFitAnalysis(
+  analysis: FitAnalysis,
+  fallback: FitAnalysis,
+  profile: ProfileInput
+): FitAnalysis {
   const coreBottlenecks = analysis.core_bottlenecks
     .map((item) => ({
       title: item.title.trim(),
@@ -1136,14 +1190,40 @@ function normalizeFitAnalysis(analysis: FitAnalysis, fallback: FitAnalysis): Fit
     analysis.custom_build_framework ?? fallback.custom_build_framework
   );
 
-  const reason = analysis.solution_direction.reason.trim() || buildSolutionReasonFromFramework(framework);
+  const contextPrefix = buildProfileContextLine(profile);
+  const rawReason = analysis.solution_direction.reason.trim() || buildSolutionReasonFromFramework(framework);
+  const reason = hasProfileContext(rawReason, profile)
+    ? rawReason
+    : `${contextPrefix} ${rawReason}`;
+
+  const normalizedBottlenecks = (coreBottlenecks.length > 0 ? coreBottlenecks : fallback.core_bottlenecks)
+    .map((item) => {
+      const analysisText = item.analysis.trim();
+      const impactText = item.impact.trim();
+      const merged = `${analysisText} ${impactText}`.trim();
+
+      if (hasProfileContext(merged, profile)) {
+        return item;
+      }
+
+      return {
+        ...item,
+        analysis: `${contextPrefix} ${analysisText || "업무 병목이 반복되고 있습니다."}`.trim()
+      };
+    })
+    .slice(0, 3);
+
+  const rawIdentity = analysis.user_identity.trim() || fallback.user_identity;
+  const userIdentity = hasProfileContext(rawIdentity, profile)
+    ? rawIdentity
+    : `${profile.jobTitle} 직무와 ${profile.industry} 업종 맥락에서 ${rawIdentity}`;
 
   const aiStructuredFeatures = analysis.solution_direction.recommended_features_structured ?? [];
   const fallbackStructuredFeatures = fallback.solution_direction.recommended_features_structured ?? [];
 
   return {
-    user_identity: analysis.user_identity.trim() || fallback.user_identity,
-    core_bottlenecks: coreBottlenecks.length > 0 ? coreBottlenecks : fallback.core_bottlenecks,
+    user_identity: userIdentity,
+    core_bottlenecks: normalizedBottlenecks,
     solution_direction: {
       can_existing_software_solve: !framework.final_decision.custom_build,
       reason,
@@ -1185,6 +1265,10 @@ function needsStageOneRegeneration(text: string): boolean {
   return checklistLines.length >= 4;
 }
 
+function needsProfileContextRegeneration(text: string, profile: ProfileInput): boolean {
+  return !hasProfileContext(text, profile);
+}
+
 function buildStageOnePrompt(
   profile: ProfileInput,
   fitDecision: string,
@@ -1207,6 +1291,7 @@ function buildStageOnePrompt(
 - 사용자의 직업/업무 특성과 문제 상황을 직접 연결해서 설명
 - "가장 불편한 점(상세)"이 제공되면 이를 분석의 최우선 기준으로 사용하고, 각 진단/해결 제안을 반드시 이 내용과 직접 연결
 - 직무/업종 맥락과 어긋나는 일반론 또는 무관한 툴 제안 금지
+- 각 핵심 진단 단락마다 반드시 직무(${profile.jobTitle}) 또는 업종(${profile.industry})을 직접 언급
 - 관찰된 행동 -> 병목 -> 결과를 구체적으로 연결
 - 근거가 약한 부분은 불확실성을 명시
 - 기존 소프트웨어가 부분 해결 가능하면 한계를 명확히 설명
@@ -1263,6 +1348,9 @@ function buildStageTwoPrompt(rawAnalysis: string): string {
 - 뉘앙스 축약 금지
 - 마케팅 문구 삽입 금지
 - JSON만 출력
+- user_identity에는 직무와 업종을 모두 포함
+- core_bottlenecks의 각 analysis 또는 impact에 직무/업종 맥락을 최소 1회 포함
+- solution_direction.reason에도 직무/업종 맥락을 포함
 
 맞춤개발 최종판단 로직은 반드시 아래를 따르세요:
 If (Gap 평균 > 50) OR (구조적 제약 YES >= 3) OR (ROI 회수 < 6개월) then custom_build=true, else false.
@@ -1390,7 +1478,6 @@ export async function generateFitAnalysis(
   try {
     const stageOneCompletion = await client.chat.completions.create({
       model: FIT_ANALYSIS_MODEL,
-      temperature: 0.85,
       messages: [
         { role: "system", content: stageOneSystemPrompt },
         { role: "user", content: stageOnePrompt }
@@ -1401,10 +1488,9 @@ export async function generateFitAnalysis(
     let rawAnalysis = stageOneCompletion.choices[0]?.message?.content?.trim() ?? "";
     if (!rawAnalysis) return fallback;
 
-    if (needsStageOneRegeneration(rawAnalysis)) {
+    if (needsStageOneRegeneration(rawAnalysis) || needsProfileContextRegeneration(rawAnalysis, profile)) {
       const retry = await client.chat.completions.create({
         model: FIT_ANALYSIS_MODEL,
-        temperature: 1,
         messages: [
           { role: "system", content: stageOneSystemPrompt },
           { role: "user", content: stageOnePrompt },
@@ -1412,7 +1498,8 @@ export async function generateFitAnalysis(
           {
             role: "user",
             content:
-              "지금 답변은 일반론적입니다. 사용자의 직업/업무 흐름/문제 상황을 더 직접 연결해 상담가처럼 다시 분석하세요."
+              `지금 답변은 일반론적입니다. 반드시 직무(${profile.jobTitle})와 업종(${profile.industry})을 직접 언급하고, ` +
+              "각 병목이 해당 맥락에서 왜 발생하는지 연결해서 상담가처럼 다시 분석하세요."
           }
         ]
       });
@@ -1424,7 +1511,6 @@ export async function generateFitAnalysis(
 
     const stageTwoCompletion = await client.chat.completions.create({
       model: FIT_ANALYSIS_STRUCTURING_MODEL,
-      temperature: 0,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: stageTwoSystemPrompt },
@@ -1442,7 +1528,7 @@ export async function generateFitAnalysis(
       return fallback;
     }
 
-    return JSON.stringify(normalizeFitAnalysis(parsed.data, fallbackParsed));
+    return JSON.stringify(normalizeFitAnalysis(parsed.data, fallbackParsed, profile));
   } catch (error) {
     console.error("[generateFitAnalysis] OpenAI call failed:", error);
     return fallback;
@@ -1483,7 +1569,6 @@ export async function generateRecommendationItems(
   try {
     const completion = await client.chat.completions.create({
       model,
-      temperature: 0.2,
       response_format: { type: "json_object" },
       messages: [
         {

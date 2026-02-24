@@ -72,7 +72,6 @@ export async function POST(request: Request) {
   try {
     const completion = await client.chat.completions.create({
       model,
-      temperature: 0.4,
       messages: [
         {
           role: "system",
@@ -105,4 +104,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ reply: fallbackReply(payload.message) });
   }
 }
-
