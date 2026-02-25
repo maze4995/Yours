@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const maxDuration = 300;
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server";
 import { runRecommendationFlow } from "@/lib/recommendation/service";
@@ -57,7 +59,8 @@ export async function POST() {
     const result = await runRecommendationFlow({
       supabase,
       userId: user.id,
-      profile: profileInput
+      profile: profileInput,
+      skipAI: true
     });
 
     // Next.js 서버 컴포넌트 캐시 무효화

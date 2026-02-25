@@ -171,10 +171,11 @@ const fitAnalysisSchema = z.object({
     .optional()
 });
 
-const FIT_ANALYSIS_MODEL = "gpt-5";
-const FIT_ANALYSIS_STRUCTURING_MODEL = "gpt-5-mini";
+const FIT_ANALYSIS_MODEL =
+  process.env.OPENAI_FIT_ANALYSIS_MODEL ?? "gpt-4o";
+const FIT_ANALYSIS_STRUCTURING_MODEL = "gpt-4o-mini";
 const RECOMMENDATION_FORMAT_MODEL =
-  process.env.OPENAI_RECOMMENDATION_FORMAT_MODEL ?? "gpt-5-mini";
+  process.env.OPENAI_RECOMMENDATION_FORMAT_MODEL ?? "gpt-4o-mini";
 
 function getOpenAIClient(): OpenAI | null {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -313,7 +314,7 @@ function buildFallbackWhyRecommended(candidate: ScoredCandidate, profile: Profil
   return `${job} 직무의 ${candidate.item.category} 업무에서 ${candidate.item.name}의 ${featureSample} 기능을 활용할 수 있습니다. ${currentToolsNote}`.trim();
 }
 
-function fallbackNarrative(candidate: ScoredCandidate, profile?: ProfileInput | null): RecommendationItem {
+export function fallbackNarrative(candidate: ScoredCandidate, profile?: ProfileInput | null): RecommendationItem {
   const whyRecommended = profile
     ? buildFallbackWhyRecommended(candidate, profile)
     : `프로필과 매칭 신호(${candidate.reasons.join(", ")})를 기준으로 우선 검토할 가치가 있습니다.`;
@@ -1078,7 +1079,7 @@ function buildStructuredFeatures(
   return features.slice(0, 3);
 }
 
-function buildDeterministicAnalysis(
+export function buildDeterministicAnalysis(
   profile: ProfileInput,
   initialFitDecision: string,
   topItems: RecommendationItem[]
@@ -1478,6 +1479,7 @@ export async function generateFitAnalysis(
   try {
     const stageOneCompletion = await client.chat.completions.create({
       model: FIT_ANALYSIS_MODEL,
+      max_tokens: 1800,
       messages: [
         { role: "system", content: stageOneSystemPrompt },
         { role: "user", content: stageOnePrompt }
@@ -1491,6 +1493,7 @@ export async function generateFitAnalysis(
     if (needsStageOneRegeneration(rawAnalysis) || needsProfileContextRegeneration(rawAnalysis, profile)) {
       const retry = await client.chat.completions.create({
         model: FIT_ANALYSIS_MODEL,
+        max_tokens: 1800,
         messages: [
           { role: "system", content: stageOneSystemPrompt },
           { role: "user", content: stageOnePrompt },
@@ -1511,6 +1514,7 @@ export async function generateFitAnalysis(
 
     const stageTwoCompletion = await client.chat.completions.create({
       model: FIT_ANALYSIS_STRUCTURING_MODEL,
+      max_tokens: 2500,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: stageTwoSystemPrompt },
@@ -1569,6 +1573,7 @@ export async function generateRecommendationItems(
   try {
     const completion = await client.chat.completions.create({
       model,
+      max_tokens: 1500,
       response_format: { type: "json_object" },
       messages: [
         {

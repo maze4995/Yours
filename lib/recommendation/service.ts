@@ -1,14 +1,22 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ProfileInput, RecommendationResult, SoftwareCatalogItem } from "@/lib/types";
 import { createProfileFingerprint, decideFitDecision, scoreCatalogCandidates } from "@/lib/recommendation/scoring";
-import { generateFitAnalysis, generateRecommendationItems } from "@/lib/recommendation/openai";
+import {
+  generateFitAnalysis,
+  generateRecommendationItems,
+  buildDeterministicAnalysis,
+  fallbackNarrative
+} from "@/lib/recommendation/openai";
 
 export async function runRecommendationFlow(params: {
   supabase: SupabaseClient;
   userId: string;
   profile: ProfileInput;
+  /** When true, skip all OpenAI calls and save a deterministic result immediately.
+   *  The results page will then auto-trigger AI enhancement via /api/recommendations/[id]/enhance. */
+  skipAI?: boolean;
 }): Promise<RecommendationResult> {
-  const { supabase, userId, profile } = params;
+  const { supabase, userId, profile, skipAI = false } = params;
   const profileFingerprint = createProfileFingerprint(profile);
 
   const { data: cached } = await supabase
@@ -41,6 +49,43 @@ export async function runRecommendationFlow(params: {
 
   const catalog = (catalogRows ?? []) as unknown as SoftwareCatalogItem[];
   const scored = scoreCatalogCandidates(profile, catalog);
+  const candidateIds = scored.slice(0, 8).map((candidate) => candidate.item.id);
+
+  // --- Fast path: save deterministic result immediately, AI enhancement happens later ---
+  if (skipAI) {
+    const items = scored.slice(0, 3).map((c) => fallbackNarrative(c, profile));
+    const fit = decideFitDecision(items);
+    const deterministicAnalysis = buildDeterministicAnalysis(profile, fit.fitDecision, items);
+    // _aiEnhanced:false is the signal for the results page to trigger background AI enhancement
+    const fitReason = JSON.stringify({ ...deterministicAnalysis, _aiEnhanced: false });
+
+    const { data: created, error: createError } = await supabase
+      .from("recommendations")
+      .insert({
+        user_id: userId,
+        profile_fingerprint: profileFingerprint,
+        profile_snapshot: profile,
+        candidate_ids: candidateIds,
+        items,
+        fit_decision: fit.fitDecision,
+        fit_reason: fitReason
+      })
+      .select("id")
+      .single();
+
+    if (createError) {
+      throw new Error(`RECOMMENDATION_INSERT_ERROR:${createError.message}`);
+    }
+
+    return {
+      recommendationId: created.id,
+      items,
+      fitDecision: fit.fitDecision,
+      fitReason: fitReason
+    };
+  }
+
+  // --- Full AI path ---
   const items = await generateRecommendationItems(profile, scored);
   const fit = decideFitDecision(items);
 
@@ -79,7 +124,6 @@ export async function runRecommendationFlow(params: {
       console.warn("[runRecommendationFlow] fit decision sync skipped:", error);
     }
   }
-  const candidateIds = scored.slice(0, 8).map((candidate) => candidate.item.id);
 
   const { data: created, error: createError } = await supabase
     .from("recommendations")

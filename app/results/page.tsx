@@ -15,6 +15,7 @@ import { requireAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { RegenerateButton } from "@/components/results/regenerate-button";
+import { AiEnhanceTrigger } from "@/components/results/ai-enhance-trigger";
 import { SoftwareAvatar } from "@/components/results/software-avatar";
 import type { ProfileInput, RecommendationItem } from "@/lib/types";
 import type { FitAnalysis as StructuredFitAnalysis } from "@/lib/recommendation/openai";
@@ -163,6 +164,15 @@ export default async function ResultsPage({
   const aiGenerated = isAiGenerated(fitReason);
   const analysis = parseFitAnalysis(fitReason);
 
+  // Detect if AI enhancement is still pending (saved with skipAI:true)
+  let needsAiEnhancement = false;
+  try {
+    const rawParsed = JSON.parse(fitReason ?? "{}") as Record<string, unknown>;
+    needsAiEnhancement = rawParsed._aiEnhanced === false;
+  } catch {
+    needsAiEnhancement = false;
+  }
+
   const softwareIds = items.map((item) => item.softwareId);
   const { data: catalogItems } =
     softwareIds.length > 0
@@ -177,6 +187,7 @@ export default async function ResultsPage({
 
   return (
     <section className="mx-auto max-w-6xl space-y-8 py-6">
+      {needsAiEnhancement && <AiEnhanceTrigger recommendationId={recommendation.id} />}
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight md:text-4xl">추천 결과</h1>
         <RegenerateButton />

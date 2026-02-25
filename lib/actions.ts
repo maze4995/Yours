@@ -272,7 +272,8 @@ export async function completeOnboardingAndRecommendAction(
     const result = await runRecommendationFlow({
       supabase,
       userId: user.id,
-      profile: parsed.data
+      profile: parsed.data,
+      skipAI: true
     });
 
     revalidatePath("/results");
